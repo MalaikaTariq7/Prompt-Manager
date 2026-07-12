@@ -1,0 +1,22 @@
+[ {
+  "id" : 2,
+  "promptId" : 12,
+  "reviewerName" : "fdht",
+  "rating" : 3,
+  "comment" : "aereftj",
+  "createdAt" : "2026-07-12T17:26:16.1998002"
+}, {
+  "id" : 3,
+  "promptId" : 18,
+  "reviewerName" : "aaaa",
+  "rating" : 4,
+  "comment" : "aswd",
+  "createdAt" : "2026-07-12T19:18:25.9964513"
+}, {
+  "id" : 4,
+  "promptId" : 19,
+  "reviewerName" : "hfyf",
+  "rating" : 5,
+  "comment" : "f",
+  "createdAt" : "2026-07-12T19:24:24.5162111"
+} ]

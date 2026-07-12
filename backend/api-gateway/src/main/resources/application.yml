@@ -1,0 +1,77 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+
+            # Prompt Service APIs
+            - id: prompt-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/prompts,/api/prompts/**
+
+            # Review Service APIs
+            - id: review-service
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/reviews,/api/reviews/**
+
+            # Prompt Service Swagger UI
+            - id: prompt-swagger
+              uri: http://localhost:8081
+              predicates:
+                - Path=/prompt/swagger-ui/**
+              filters:
+                - RewritePath=/prompt/?(?<segment>.*), /$\{segment}
+
+            # Prompt Service OpenAPI Docs
+            - id: prompt-api-docs
+              uri: http://localhost:8081
+              predicates:
+                - Path=/prompt/v3/api-docs/**
+              filters:
+                - RewritePath=/prompt/?(?<segment>.*), /$\{segment}
+
+            # Review Service Swagger UI
+            - id: review-swagger
+              uri: http://localhost:8082
+              predicates:
+                - Path=/review/swagger-ui/**
+              filters:
+                - RewritePath=/review/?(?<segment>.*), /$\{segment}
+
+            # Review Service OpenAPI Docs
+            - id: review-api-docs
+              uri: http://localhost:8082
+              predicates:
+                - Path=/review/v3/api-docs/**
+              filters:
+                - RewritePath=/review/?(?<segment>.*), /$\{segment}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+          - env
+          - mappings
+
+  endpoint:
+    health:
+      show-details: always
+
+info:
+  application:
+    name: Prompt Manager API Gateway
+    description: Routes requests to Prompt Service and Review Service
+    version: 1.0.0
