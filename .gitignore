@@ -6,6 +6,7 @@
 Thumbs.db
 Desktop.ini
 
+
 ##################################################
 # VS Code
 ##################################################
@@ -13,12 +14,14 @@ Desktop.ini
 .vscode/
 .history/
 
+
 ##################################################
 # Logs
 ##################################################
 
 *.log
 logs/
+
 
 ##################################################
 # Environment Files
@@ -28,24 +31,30 @@ logs/
 .env.local
 .env.*
 
+
 ##################################################
-# Node / React / Vite
+# Node / React / Vite Frontend
 ##################################################
 
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
-frontend/pnpm-debug.log*
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
 
 ##################################################
 # Maven / Spring Boot
 ##################################################
 
 **/target/
+
+# Maven wrapper generated jar
 **/.mvn/wrapper/maven-wrapper.jar
+
 
 ##################################################
 # IntelliJ IDEA
@@ -53,6 +62,7 @@ frontend/pnpm-debug.log*
 
 .idea/
 *.iml
+
 
 ##################################################
 # Eclipse
@@ -62,20 +72,23 @@ frontend/pnpm-debug.log*
 .classpath
 .settings/
 
+
 ##################################################
 # NetBeans
 ##################################################
 
 nbproject/
 
+
 ##################################################
-# Java
+# Java Build Files
 ##################################################
 
 *.class
 *.jar
 *.war
 *.ear
+
 
 ##################################################
 # Temporary Files
@@ -86,6 +99,7 @@ nbproject/
 *.swp
 *.swo
 
+
 ##################################################
 # Build Outputs
 ##################################################
@@ -93,19 +107,21 @@ nbproject/
 build/
 out/
 
-##################################################
-# JSON Data (Optional)
-##################################################
-# Uncomment ONLY if you don't want runtime data in Git
-
-# backend/prompt-service/prompts.json
-# backend/review-service/reviews.json
 
 ##################################################
-# Coverage
+# JSON Runtime Storage
+##################################################
+
+backend/prompt-service/prompts.json
+backend/review-service/reviews.json
+
+
+##################################################
+# Test Coverage
 ##################################################
 
 coverage/
+
 
 ##################################################
 # Docker
@@ -113,8 +129,26 @@ coverage/
 
 docker-compose.override.yml
 
+
 ##################################################
-# Mac/Linux
+# Database Files
+##################################################
+
+*.db
+*.sqlite
+*.sqlite3
+
+
+##################################################
+# OS Cache
+##################################################
+
+.npm
+.cache
+
+
+##################################################
+# Process Files
 ##################################################
 
 *.pid
