@@ -30,6 +30,42 @@ ngrok public URL -> Vite frontend on localhost:3000
 
 Because the browser calls relative `/api/...` URLs, users only need the one ngrok link.
 
+
+## Architecture Diagram
+
+```mermaid
+flowchart LR
+    User[User Browser] --> Ngrok[ngrok Public URL]
+    Ngrok --> Vite[React + Vite Frontend<br/>localhost:3000]
+
+    Vite -->|/api/prompts| PromptController[Prompt Controller<br/>/api/prompts]
+    Vite -->|/api/reviews| ReviewController[Review Controller<br/>/api/reviews]
+
+    subgraph PromptService[Prompt Service - localhost:8081]
+        PromptController --> PromptServiceLayer[Prompt Service Layer]
+        PromptServiceLayer --> PromptRepository[Prompt Repository]
+        PromptRepository --> PostgreSQL[(PostgreSQL<br/>prompt_manager DB)]
+    end
+
+    subgraph ReviewService[Review Service - localhost:8082]
+        ReviewController --> ReviewServiceLayer[Review Service Layer]
+        ReviewServiceLayer --> JsonReviewRepository[JSON Review Repository]
+        JsonReviewRepository --> ReviewsJson[(reviews.json)]
+        ReviewServiceLayer -->|validate promptId| PromptClient[Prompt Service Client]
+    end
+
+    PromptClient -->|GET /api/prompts/:id| PromptController
+```
+
+## Service Flow
+
+- Users access one ngrok URL, which forwards traffic to the Vite frontend on `localhost:3000`.
+- The frontend sends relative API requests so `/api/prompts` and `/api/reviews` stay under the same public link.
+- Vite proxies prompt requests to the prompt service on `localhost:8081`.
+- Vite proxies review requests to the review service on `localhost:8082`.
+- The prompt service stores prompt data in PostgreSQL.
+- The review service stores review data in `backend/review-service/reviews.json` and checks the prompt service before creating or updating reviews.
+
 ## Requirements
 
 - Java 17+
