@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.promptmanager.prompt_service.dto.PromptRequest;
 import com.promptmanager.prompt_service.dto.PromptResponse;
@@ -19,9 +20,14 @@ import com.promptmanager.prompt_service.repository.PromptRepository;
 public class PromptServiceImpl implements PromptService {
 
     private final PromptRepository promptRepository;
+    private final CloudinaryService cloudinaryService;
 
-    public PromptServiceImpl(PromptRepository promptRepository) {
+    public PromptServiceImpl(
+            PromptRepository promptRepository,
+            CloudinaryService cloudinaryService) {
+
         this.promptRepository = promptRepository;
+        this.cloudinaryService = cloudinaryService;
     }
 
     @Override
@@ -80,7 +86,48 @@ public class PromptServiceImpl implements PromptService {
                 .orElseThrow(() ->
                         new PromptNotFoundException("Prompt not found with id : " + id));
 
+        if (prompt.getAttachmentPublicId() != null) {
+            cloudinaryService.delete(prompt.getAttachmentPublicId());
+        }
+
         promptRepository.delete(prompt);
+    }
+
+    @Override
+    public PromptResponse uploadAttachment(Long promptId, MultipartFile file) {
+
+        Prompt prompt = findPromptById(promptId);
+
+        if (prompt.getAttachmentPublicId() != null) {
+            cloudinaryService.delete(prompt.getAttachmentPublicId());
+        }
+
+        CloudinaryService.UploadResult uploadResult =
+                cloudinaryService.upload(file);
+
+        prompt.setAttachmentUrl(uploadResult.secureUrl());
+        prompt.setAttachmentPublicId(uploadResult.publicId());
+
+        Prompt updatedPrompt = promptRepository.save(prompt);
+
+        return PromptMapper.toResponse(updatedPrompt);
+    }
+
+    @Override
+    public PromptResponse deleteAttachment(Long promptId) {
+
+        Prompt prompt = findPromptById(promptId);
+
+        if (prompt.getAttachmentPublicId() != null) {
+            cloudinaryService.delete(prompt.getAttachmentPublicId());
+        }
+
+        prompt.setAttachmentUrl(null);
+        prompt.setAttachmentPublicId(null);
+
+        Prompt updatedPrompt = promptRepository.save(prompt);
+
+        return PromptMapper.toResponse(updatedPrompt);
     }
 
     @Override
@@ -122,6 +169,12 @@ public class PromptServiceImpl implements PromptService {
         return prompts.stream()
                 .sorted(this::comparePromptsNewestFirst)
                 .toList();
+    }
+
+    private Prompt findPromptById(Long id) {
+        return promptRepository.findById(id)
+                .orElseThrow(() ->
+                        new PromptNotFoundException("Prompt not found with id : " + id));
     }
 
     private int comparePromptsNewestFirst(Prompt first, Prompt second) {

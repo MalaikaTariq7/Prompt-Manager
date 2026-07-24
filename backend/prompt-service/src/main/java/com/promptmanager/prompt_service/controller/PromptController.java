@@ -3,12 +3,18 @@ package com.promptmanager.prompt_service.controller;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.promptmanager.prompt_service.dto.PromptRequest;
 import com.promptmanager.prompt_service.dto.PromptResponse;
 import com.promptmanager.prompt_service.service.PromptService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 
 @RestController
@@ -54,6 +60,30 @@ public class PromptController {
             @PathVariable Long id) {
 
         promptService.deletePrompt(id);
+    }
+
+    @Operation(summary = "Upload an attachment for a prompt")
+    @PostMapping(
+            value = "/{id}/attachment",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public PromptResponse uploadAttachment(
+            @PathVariable Long id,
+            @Parameter(
+                    description = "Attachment file",
+                    required = true,
+                    schema = @Schema(type = "string", format = "binary"))
+            @RequestParam("file") MultipartFile file) {
+
+        return promptService.uploadAttachment(id, file);
+    }
+
+    @Operation(summary = "Delete the attachment from a prompt")
+    @DeleteMapping("/{id}/attachment")
+    public PromptResponse deleteAttachment(
+            @PathVariable Long id) {
+
+        return promptService.deleteAttachment(id);
     }
 
     @GetMapping("/search")

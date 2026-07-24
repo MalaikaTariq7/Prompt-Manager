@@ -24,7 +24,8 @@ public class PromptMapper {
                 prompt.getDescription(),
                 prompt.getPromptText(),
                 prompt.getCategory(),
-                prompt.getCreatedAt()
+                prompt.getCreatedAt(),
+                prompt.getAttachmentUrl()
         );
     }
 }

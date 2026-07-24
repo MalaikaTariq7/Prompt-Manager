@@ -16,6 +16,8 @@ public class PromptResponse {
 
     private LocalDateTime createdAt;
 
+    private String attachmentUrl;
+
     // Default Constructor
     public PromptResponse() {
     }
@@ -34,6 +36,18 @@ public class PromptResponse {
         this.promptText = promptText;
         this.category = category;
         this.createdAt = createdAt;
+    }
+
+    public PromptResponse(Long id,
+                          String title,
+                          String description,
+                          String promptText,
+                          String category,
+                          LocalDateTime createdAt,
+                          String attachmentUrl) {
+
+        this(id, title, description, promptText, category, createdAt);
+        this.attachmentUrl = attachmentUrl;
     }
 
     // Getters & Setters
@@ -84,5 +98,13 @@ public class PromptResponse {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getAttachmentUrl() {
+        return attachmentUrl;
+    }
+
+    public void setAttachmentUrl(String attachmentUrl) {
+        this.attachmentUrl = attachmentUrl;
     }
 }

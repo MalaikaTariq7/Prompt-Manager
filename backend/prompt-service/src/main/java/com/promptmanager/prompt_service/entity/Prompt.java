@@ -33,6 +33,10 @@ public class Prompt {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    private String attachmentUrl;
+
+    private String attachmentPublicId;
+
     // Default Constructor
     public Prompt() {
     }
@@ -46,6 +50,14 @@ public class Prompt {
         this.promptText = promptText;
         this.category = category;
         this.createdAt = createdAt;
+    }
+
+    public Prompt(Long id, String title, String description, String promptText,
+                  String category, LocalDateTime createdAt,
+                  String attachmentUrl, String attachmentPublicId) {
+        this(id, title, description, promptText, category, createdAt);
+        this.attachmentUrl = attachmentUrl;
+        this.attachmentPublicId = attachmentPublicId;
     }
 
     // Automatically sets createdAt before saving to database
@@ -106,6 +118,22 @@ public class Prompt {
         this.createdAt = createdAt;
     }
 
+    public String getAttachmentUrl() {
+        return attachmentUrl;
+    }
+
+    public void setAttachmentUrl(String attachmentUrl) {
+        this.attachmentUrl = attachmentUrl;
+    }
+
+    public String getAttachmentPublicId() {
+        return attachmentPublicId;
+    }
+
+    public void setAttachmentPublicId(String attachmentPublicId) {
+        this.attachmentPublicId = attachmentPublicId;
+    }
+
     @Override
     public String toString() {
         return "Prompt{" +
@@ -115,6 +143,7 @@ public class Prompt {
                 ", promptText='" + promptText + '\'' +
                 ", category='" + category + '\'' +
                 ", createdAt=" + createdAt +
+                ", attachmentUrl='" + attachmentUrl + '\'' +
                 '}';
     }
 }
