@@ -17,30 +17,52 @@ public class ReviewServiceImpl implements ReviewService {
 
     private final JsonReviewRepository repository;
     private final PromptServiceClient promptServiceClient;
+    private final ReviewNotificationService
+            reviewNotificationService;
 
-    public ReviewServiceImpl(JsonReviewRepository repository,
-                             PromptServiceClient promptServiceClient) {
+    public ReviewServiceImpl(
+            JsonReviewRepository repository,
+            PromptServiceClient promptServiceClient,
+            ReviewNotificationService
+                    reviewNotificationService) {
+
         this.repository = repository;
-        this.promptServiceClient = promptServiceClient;
+        this.promptServiceClient =
+                promptServiceClient;
+        this.reviewNotificationService =
+                reviewNotificationService;
     }
 
     @Override
-    public ReviewResponse createReview(ReviewRequest request) {
+    public ReviewResponse createReview(
+            ReviewRequest request) {
 
-        // Verify prompt exists in Prompt Service
-        promptServiceClient.getPromptById(request.getPromptId());
+        promptServiceClient.getPromptById(
+                request.getPromptId()
+        );
 
-        Review review = ReviewMapper.toEntity(request);
+        Review review =
+                ReviewMapper.toEntity(request);
 
-        Review savedReview = repository.save(review);
+        Review savedReview =
+                repository.save(review);
 
-        return ReviewMapper.toResponse(savedReview);
+        reviewNotificationService
+                .sendReviewNotification(
+                        savedReview
+                );
+
+        return ReviewMapper.toResponse(
+                savedReview
+        );
     }
 
     @Override
     public List<ReviewResponse> getAllReviews() {
 
-        return sortReviewsNewestFirst(repository.findAll())
+        return sortReviewsNewestFirst(
+                repository.findAll()
+        )
                 .stream()
                 .map(ReviewMapper::toResponse)
                 .toList();
@@ -52,30 +74,53 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = repository.findById(id)
                 .orElseThrow(() ->
                         new ReviewNotFoundException(
-                                "Review not found with ID: " + id));
+                                "Review not found with ID: "
+                                        + id
+                        )
+                );
 
         return ReviewMapper.toResponse(review);
     }
 
     @Override
-    public ReviewResponse updateReview(Long id, ReviewRequest request) {
+    public ReviewResponse updateReview(
+            Long id,
+            ReviewRequest request) {
 
         Review review = repository.findById(id)
                 .orElseThrow(() ->
                         new ReviewNotFoundException(
-                                "Review not found with ID: " + id));
+                                "Review not found with ID: "
+                                        + id
+                        )
+                );
 
-        // Verify prompt exists before updating
-        promptServiceClient.getPromptById(request.getPromptId());
+        promptServiceClient.getPromptById(
+                request.getPromptId()
+        );
 
-        review.setPromptId(request.getPromptId());
-        review.setReviewerName(request.getReviewerName());
-        review.setRating(request.getRating());
-        review.setComment(request.getComment());
+        review.setPromptId(
+                request.getPromptId()
+        );
 
-        Review updatedReview = repository.save(review);
+        review.setReviewerName(
+                request.getReviewerName()
+        );
 
-        return ReviewMapper.toResponse(updatedReview);
+        review.setRating(
+                request.getRating()
+        );
+
+        review.setComment(
+                request.getComment()
+        );
+
+        Review updatedReview =
+                repository.save(review);
+
+        return ReviewMapper.toResponse(
+                updatedReview
+        );
     }
 
     @Override
@@ -84,33 +129,48 @@ public class ReviewServiceImpl implements ReviewService {
         repository.findById(id)
                 .orElseThrow(() ->
                         new ReviewNotFoundException(
-                                "Review not found with ID: " + id));
+                                "Review not found with ID: "
+                                        + id
+                        )
+                );
 
         repository.delete(id);
     }
 
     @Override
-    public List<ReviewResponse> getReviewsByPromptId(Long promptId) {
+    public List<ReviewResponse>
+            getReviewsByPromptId(Long promptId) {
 
-        return sortReviewsNewestFirst(repository.findByPromptId(promptId))
+        return sortReviewsNewestFirst(
+                repository.findByPromptId(promptId)
+        )
                 .stream()
                 .map(ReviewMapper::toResponse)
                 .toList();
     }
 
     @Override
-    public List<ReviewResponse> getReviewsByRating(Integer rating) {
+    public List<ReviewResponse>
+            getReviewsByRating(Integer rating) {
 
-        return sortReviewsNewestFirst(repository.findByRating(rating))
+        return sortReviewsNewestFirst(
+                repository.findByRating(rating)
+        )
                 .stream()
                 .map(ReviewMapper::toResponse)
                 .toList();
     }
 
     @Override
-    public List<ReviewResponse> searchReviewer(String reviewerName) {
+    public List<ReviewResponse> searchReviewer(
+            String reviewerName) {
 
-        return sortReviewsNewestFirst(repository.findByReviewerNameContainingIgnoreCase(reviewerName))
+        return sortReviewsNewestFirst(
+                repository
+                        .findByReviewerNameContainingIgnoreCase(
+                                reviewerName
+                        )
+        )
                 .stream()
                 .map(ReviewMapper::toResponse)
                 .toList();
@@ -123,9 +183,14 @@ public class ReviewServiceImpl implements ReviewService {
             String sortBy,
             String direction) {
 
-        List<Review> reviews = repository.findAll();
+        List<Review> reviews =
+                repository.findAll();
 
-        reviews = repository.sort(reviews, sortBy, direction);
+        reviews = repository.sort(
+                reviews,
+                sortBy,
+                direction
+        );
 
         int start = page * size;
 
@@ -133,7 +198,10 @@ public class ReviewServiceImpl implements ReviewService {
             return List.of();
         }
 
-        int end = Math.min(start + size, reviews.size());
+        int end = Math.min(
+                start + size,
+                reviews.size()
+        );
 
         return reviews.subList(start, end)
                 .stream()
@@ -141,24 +209,45 @@ public class ReviewServiceImpl implements ReviewService {
                 .toList();
     }
 
-    private List<Review> sortReviewsNewestFirst(List<Review> reviews) {
+    private List<Review> sortReviewsNewestFirst(
+            List<Review> reviews) {
+
         return reviews.stream()
-                .sorted(this::compareReviewsNewestFirst)
+                .sorted(
+                        this::compareReviewsNewestFirst
+                )
                 .toList();
     }
 
-    private int compareReviewsNewestFirst(Review first, Review second) {
-        LocalDateTime firstCreatedAt = first.getCreatedAt();
-        LocalDateTime secondCreatedAt = second.getCreatedAt();
+    private int compareReviewsNewestFirst(
+            Review first,
+            Review second) {
 
-        if (firstCreatedAt == null && secondCreatedAt != null) {
+        LocalDateTime firstCreatedAt =
+                first.getCreatedAt();
+
+        LocalDateTime secondCreatedAt =
+                second.getCreatedAt();
+
+        if (firstCreatedAt == null
+                && secondCreatedAt != null) {
+
             return 1;
         }
-        if (firstCreatedAt != null && secondCreatedAt == null) {
+
+        if (firstCreatedAt != null
+                && secondCreatedAt == null) {
+
             return -1;
         }
+
         if (firstCreatedAt != null) {
-            int createdAtComparison = secondCreatedAt.compareTo(firstCreatedAt);
+
+            int createdAtComparison =
+                    secondCreatedAt.compareTo(
+                            firstCreatedAt
+                    );
+
             if (createdAtComparison != 0) {
                 return createdAtComparison;
             }
@@ -167,15 +256,22 @@ public class ReviewServiceImpl implements ReviewService {
         Long firstId = first.getId();
         Long secondId = second.getId();
 
-        if (firstId == null && secondId != null) {
+        if (firstId == null
+                && secondId != null) {
+
             return 1;
         }
-        if (firstId != null && secondId == null) {
+
+        if (firstId != null
+                && secondId == null) {
+
             return -1;
         }
+
         if (firstId == null) {
             return 0;
         }
+
         return secondId.compareTo(firstId);
     }
 }

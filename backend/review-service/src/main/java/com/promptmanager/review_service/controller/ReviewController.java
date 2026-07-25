@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.promptmanager.review_service.dto.ReviewDigestResponse;
 import com.promptmanager.review_service.dto.ReviewRequest;
 import com.promptmanager.review_service.dto.ReviewResponse;
+import com.promptmanager.review_service.service.ReviewDigestService;
 import com.promptmanager.review_service.service.ReviewService;
 
 import jakarta.validation.Valid;
@@ -24,58 +26,143 @@ import jakarta.validation.Valid;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    private final ReviewDigestService
+            reviewDigestService;
 
-    public ReviewController(ReviewService reviewService) {
+    public ReviewController(
+            ReviewService reviewService,
+            ReviewDigestService reviewDigestService) {
+
         this.reviewService = reviewService;
+        this.reviewDigestService =
+                reviewDigestService;
     }
 
     @PostMapping
-    public ResponseEntity<ReviewResponse> createReview(@Valid @RequestBody ReviewRequest request) {
-        return ResponseEntity.ok(reviewService.createReview(request));
+    public ResponseEntity<ReviewResponse>
+            createReview(
+                    @Valid
+                    @RequestBody
+                    ReviewRequest request) {
+
+        return ResponseEntity.ok(
+                reviewService.createReview(request)
+        );
     }
 
     @GetMapping
-    public ResponseEntity<List<ReviewResponse>> getAllReviews() {
-        return ResponseEntity.ok(reviewService.getAllReviews());
+    public ResponseEntity<List<ReviewResponse>>
+            getAllReviews() {
+
+        return ResponseEntity.ok(
+                reviewService.getAllReviews()
+        );
+    }
+
+    @GetMapping("/digest/latest")
+    public ResponseEntity<ReviewDigestResponse>
+            getLatestDigest() {
+
+        return ResponseEntity.ok(
+                reviewDigestService.getLatestDigest()
+        );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ReviewResponse> getReviewById(@PathVariable Long id) {
-        return ResponseEntity.ok(reviewService.getReviewById(id));
+    public ResponseEntity<ReviewResponse>
+            getReviewById(
+                    @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                reviewService.getReviewById(id)
+        );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ReviewResponse> updateReview(@PathVariable Long id, @Valid @RequestBody ReviewRequest request) {
-        return ResponseEntity.ok(reviewService.updateReview(id, request));
+    public ResponseEntity<ReviewResponse>
+            updateReview(
+                    @PathVariable Long id,
+                    @Valid
+                    @RequestBody
+                    ReviewRequest request) {
+
+        return ResponseEntity.ok(
+                reviewService.updateReview(
+                        id,
+                        request
+                )
+        );
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteReview(@PathVariable Long id) {
+    public ResponseEntity<String> deleteReview(
+            @PathVariable Long id) {
+
         reviewService.deleteReview(id);
-        return ResponseEntity.ok("Review deleted successfully.");
+
+        return ResponseEntity.ok(
+                "Review deleted successfully."
+        );
     }
 
     @GetMapping("/prompt/{promptId}")
-    public ResponseEntity<List<ReviewResponse>> getReviewsByPromptId(@PathVariable Long promptId) {
-        return ResponseEntity.ok(reviewService.getReviewsByPromptId(promptId));
+    public ResponseEntity<List<ReviewResponse>>
+            getReviewsByPromptId(
+                    @PathVariable Long promptId) {
+
+        return ResponseEntity.ok(
+                reviewService
+                        .getReviewsByPromptId(
+                                promptId
+                        )
+        );
     }
 
     @GetMapping("/rating/{rating}")
-    public ResponseEntity<List<ReviewResponse>> getReviewsByRating(@PathVariable Integer rating) {
-        return ResponseEntity.ok(reviewService.getReviewsByRating(rating));
+    public ResponseEntity<List<ReviewResponse>>
+            getReviewsByRating(
+                    @PathVariable Integer rating) {
+
+        return ResponseEntity.ok(
+                reviewService
+                        .getReviewsByRating(rating)
+        );
     }
 
     @GetMapping("/reviewer")
-    public ResponseEntity<List<ReviewResponse>> searchReviewer(@RequestParam String name) {
-        return ResponseEntity.ok(reviewService.searchReviewer(name));
+    public ResponseEntity<List<ReviewResponse>>
+            searchReviewer(
+                    @RequestParam String name) {
+
+        return ResponseEntity.ok(
+                reviewService.searchReviewer(name)
+        );
     }
 
     @GetMapping("/page")
-    public ResponseEntity<List<ReviewResponse>> getPaginatedReviews(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction) {
-        return ResponseEntity.ok(reviewService.getPaginatedReviews(page, size, sortBy, direction));
+    public ResponseEntity<List<ReviewResponse>>
+            getPaginatedReviews(
+                    @RequestParam(defaultValue = "0")
+                    int page,
+
+                    @RequestParam(defaultValue = "5")
+                    int size,
+
+                    @RequestParam(
+                            defaultValue = "createdAt"
+                    )
+                    String sortBy,
+
+                    @RequestParam(defaultValue = "desc")
+                    String direction) {
+
+        return ResponseEntity.ok(
+                reviewService.getPaginatedReviews(
+                        page,
+                        size,
+                        sortBy,
+                        direction
+                )
+        );
     }
 }
