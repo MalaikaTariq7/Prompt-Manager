@@ -2,12 +2,16 @@ package com.promptmanager.prompt_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 
 @SpringBootApplication
+@EnableCaching
 public class PromptServiceApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(PromptServiceApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(
+                PromptServiceApplication.class,
+                args
+        );
+    }
 }

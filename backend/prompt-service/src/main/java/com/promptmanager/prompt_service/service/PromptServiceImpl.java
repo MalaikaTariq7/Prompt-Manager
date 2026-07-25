@@ -3,6 +3,9 @@ package com.promptmanager.prompt_service.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -18,6 +21,8 @@ import com.promptmanager.prompt_service.repository.PromptRepository;
 
 @Service
 public class PromptServiceImpl implements PromptService {
+
+    private static final String PROMPT_CACHE = "prompts";
 
     private final PromptRepository promptRepository;
     private final CloudinaryService cloudinaryService;
@@ -45,29 +50,46 @@ public class PromptServiceImpl implements PromptService {
     @Override
     public List<PromptResponse> getAllPrompts() {
 
-        return promptRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")
-                        .and(Sort.by(Sort.Direction.DESC, "id")))
+        return promptRepository
+                .findAll(
+                        Sort.by(Sort.Direction.DESC, "createdAt")
+                                .and(Sort.by(Sort.Direction.DESC, "id"))
+                )
                 .stream()
                 .map(PromptMapper::toResponse)
                 .toList();
     }
 
     @Override
+    @Cacheable(value = PROMPT_CACHE, key = "#id")
     public PromptResponse getPromptById(Long id) {
+
+        System.out.println(
+                "DATABASE HIT: Loading prompt with id " + id
+        );
 
         Prompt prompt = promptRepository.findById(id)
                 .orElseThrow(() ->
-                        new PromptNotFoundException("Prompt not found with id : " + id));
+                        new PromptNotFoundException(
+                                "Prompt not found with id : " + id
+                        )
+                );
 
         return PromptMapper.toResponse(prompt);
     }
 
     @Override
-    public PromptResponse updatePrompt(Long id, PromptRequest request) {
+    @CachePut(value = PROMPT_CACHE, key = "#id")
+    public PromptResponse updatePrompt(
+            Long id,
+            PromptRequest request) {
 
         Prompt prompt = promptRepository.findById(id)
                 .orElseThrow(() ->
-                        new PromptNotFoundException("Prompt not found with id : " + id));
+                        new PromptNotFoundException(
+                                "Prompt not found with id : " + id
+                        )
+                );
 
         prompt.setTitle(request.getTitle());
         prompt.setDescription(request.getDescription());
@@ -80,52 +102,84 @@ public class PromptServiceImpl implements PromptService {
     }
 
     @Override
+    @CacheEvict(value = PROMPT_CACHE, key = "#id")
     public void deletePrompt(Long id) {
 
         Prompt prompt = promptRepository.findById(id)
                 .orElseThrow(() ->
-                        new PromptNotFoundException("Prompt not found with id : " + id));
+                        new PromptNotFoundException(
+                                "Prompt not found with id : " + id
+                        )
+                );
 
-        if (prompt.getAttachmentPublicId() != null) {
-            cloudinaryService.delete(prompt.getAttachmentPublicId());
+        if (prompt.getAttachmentPublicId() != null
+                && !prompt.getAttachmentPublicId().isBlank()) {
+
+            cloudinaryService.delete(
+                    prompt.getAttachmentPublicId()
+            );
         }
 
         promptRepository.delete(prompt);
     }
 
     @Override
-    public PromptResponse uploadAttachment(Long promptId, MultipartFile file) {
+    @CachePut(value = PROMPT_CACHE, key = "#promptId")
+    public PromptResponse uploadAttachment(
+            Long promptId,
+            MultipartFile file) {
 
         Prompt prompt = findPromptById(promptId);
 
-        if (prompt.getAttachmentPublicId() != null) {
-            cloudinaryService.delete(prompt.getAttachmentPublicId());
+        if (prompt.getAttachmentPublicId() != null
+                && !prompt.getAttachmentPublicId().isBlank()) {
+
+            cloudinaryService.delete(
+                    prompt.getAttachmentPublicId()
+            );
         }
 
         CloudinaryService.UploadResult uploadResult =
                 cloudinaryService.upload(file);
 
-        prompt.setAttachmentUrl(uploadResult.secureUrl());
-        prompt.setAttachmentPublicId(uploadResult.publicId());
+        prompt.setAttachmentUrl(
+                uploadResult.secureUrl()
+        );
 
-        Prompt updatedPrompt = promptRepository.save(prompt);
+        prompt.setAttachmentPublicId(
+                uploadResult.publicId()
+        );
+
+        Prompt updatedPrompt =
+                promptRepository.save(prompt);
 
         return PromptMapper.toResponse(updatedPrompt);
     }
 
     @Override
+    @CachePut(value = PROMPT_CACHE, key = "#promptId")
     public PromptResponse deleteAttachment(Long promptId) {
 
         Prompt prompt = findPromptById(promptId);
 
-        if (prompt.getAttachmentPublicId() != null) {
-            cloudinaryService.delete(prompt.getAttachmentPublicId());
+        if (prompt.getAttachmentPublicId() == null
+                || prompt.getAttachmentPublicId().isBlank()) {
+
+            throw new PromptNotFoundException(
+                    "Prompt with id " + promptId
+                            + " has no attachment to remove"
+            );
         }
+
+        cloudinaryService.delete(
+                prompt.getAttachmentPublicId()
+        );
 
         prompt.setAttachmentUrl(null);
         prompt.setAttachmentPublicId(null);
 
-        Prompt updatedPrompt = promptRepository.save(prompt);
+        Prompt updatedPrompt =
+                promptRepository.save(prompt);
 
         return PromptMapper.toResponse(updatedPrompt);
     }
@@ -133,16 +187,23 @@ public class PromptServiceImpl implements PromptService {
     @Override
     public List<PromptResponse> searchByTitle(String title) {
 
-        return sortPromptsNewestFirst(promptRepository.findByTitleContainingIgnoreCase(title))
+        return sortPromptsNewestFirst(
+                promptRepository
+                        .findByTitleContainingIgnoreCase(title)
+        )
                 .stream()
                 .map(PromptMapper::toResponse)
                 .toList();
     }
 
     @Override
-    public List<PromptResponse> getPromptsByCategory(String category) {
+    public List<PromptResponse> getPromptsByCategory(
+            String category) {
 
-        return sortPromptsNewestFirst(promptRepository.findByCategoryIgnoreCase(category))
+        return sortPromptsNewestFirst(
+                promptRepository
+                        .findByCategoryIgnoreCase(category)
+        )
                 .stream()
                 .map(PromptMapper::toResponse)
                 .toList();
@@ -159,36 +220,61 @@ public class PromptServiceImpl implements PromptService {
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
 
-        PageRequest pageRequest = PageRequest.of(page, size, sort);
+        PageRequest pageRequest =
+                PageRequest.of(page, size, sort);
 
-        return promptRepository.findAll(pageRequest)
+        return promptRepository
+                .findAll(pageRequest)
                 .map(PromptMapper::toResponse);
     }
 
-    private List<Prompt> sortPromptsNewestFirst(List<Prompt> prompts) {
+    private Prompt findPromptById(Long id) {
+
+        return promptRepository.findById(id)
+                .orElseThrow(() ->
+                        new PromptNotFoundException(
+                                "Prompt not found with id : " + id
+                        )
+                );
+    }
+
+    private List<Prompt> sortPromptsNewestFirst(
+            List<Prompt> prompts) {
+
         return prompts.stream()
                 .sorted(this::comparePromptsNewestFirst)
                 .toList();
     }
 
-    private Prompt findPromptById(Long id) {
-        return promptRepository.findById(id)
-                .orElseThrow(() ->
-                        new PromptNotFoundException("Prompt not found with id : " + id));
-    }
+    private int comparePromptsNewestFirst(
+            Prompt first,
+            Prompt second) {
 
-    private int comparePromptsNewestFirst(Prompt first, Prompt second) {
-        LocalDateTime firstCreatedAt = first.getCreatedAt();
-        LocalDateTime secondCreatedAt = second.getCreatedAt();
+        LocalDateTime firstCreatedAt =
+                first.getCreatedAt();
 
-        if (firstCreatedAt == null && secondCreatedAt != null) {
+        LocalDateTime secondCreatedAt =
+                second.getCreatedAt();
+
+        if (firstCreatedAt == null
+                && secondCreatedAt != null) {
+
             return 1;
         }
-        if (firstCreatedAt != null && secondCreatedAt == null) {
+
+        if (firstCreatedAt != null
+                && secondCreatedAt == null) {
+
             return -1;
         }
+
         if (firstCreatedAt != null) {
-            int createdAtComparison = secondCreatedAt.compareTo(firstCreatedAt);
+
+            int createdAtComparison =
+                    secondCreatedAt.compareTo(
+                            firstCreatedAt
+                    );
+
             if (createdAtComparison != 0) {
                 return createdAtComparison;
             }
@@ -200,13 +286,15 @@ public class PromptServiceImpl implements PromptService {
         if (firstId == null && secondId != null) {
             return 1;
         }
+
         if (firstId != null && secondId == null) {
             return -1;
         }
+
         if (firstId == null) {
             return 0;
         }
+
         return secondId.compareTo(firstId);
     }
-
 }
