@@ -9,6 +9,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -72,6 +76,27 @@ public class JsonReviewRepository {
 
     public List<Review> findAll() {
         return readAll();
+    }
+
+    public Page<Review> findAll(Pageable pageable, Long promptId) {
+        List<Review> reviews = readAll().stream()
+                .filter(review -> promptId == null
+                        || promptId.equals(review.getPromptId()))
+                .toList();
+
+        List<Review> sortedReviews = applySort(reviews, pageable.getSort());
+
+        int totalElements = sortedReviews.size();
+        int start = Math.toIntExact(pageable.getOffset());
+
+        if (start >= totalElements) {
+            return new PageImpl<>(List.of(), pageable, totalElements);
+        }
+
+        int end = Math.min(start + pageable.getPageSize(), totalElements);
+        List<Review> content = new ArrayList<>(sortedReviews.subList(start, end));
+
+        return new PageImpl<>(content, pageable, totalElements);
     }
 
     public Optional<Review> findById(Long id) {
@@ -144,14 +169,7 @@ public class JsonReviewRepository {
 
     public List<Review> sort(List<Review> reviews, String sortBy, String direction) {
         List<Review> sortedReviews = new ArrayList<>(reviews);
-
-        Comparator<Review> comparator = switch (sortBy == null ? "id" : sortBy.toLowerCase()) {
-            case "promptid" -> Comparator.comparing(Review::getPromptId, Comparator.nullsLast(Long::compareTo));
-            case "reviewername" -> Comparator.comparing(Review::getReviewerName, Comparator.nullsLast(String::compareToIgnoreCase));
-            case "rating" -> Comparator.comparing(Review::getRating, Comparator.nullsLast(Integer::compareTo));
-            case "createdat" -> Comparator.comparing(Review::getCreatedAt, Comparator.nullsLast(LocalDateTime::compareTo));
-            default -> Comparator.comparing(Review::getId, Comparator.nullsLast(Long::compareTo));
-        };
+        Comparator<Review> comparator = comparatorFor(sortBy == null ? "id" : sortBy);
 
         if ("desc".equalsIgnoreCase(direction)) {
             comparator = comparator.reversed();
@@ -159,5 +177,42 @@ public class JsonReviewRepository {
 
         sortedReviews.sort(comparator);
         return sortedReviews;
+    }
+
+    private List<Review> applySort(List<Review> reviews, Sort sort) {
+        List<Review> sortedReviews = new ArrayList<>(reviews);
+
+        if (sort.isUnsorted()) {
+            return sortedReviews;
+        }
+
+        Comparator<Review> combinedComparator = null;
+
+        for (Sort.Order order : sort) {
+            Comparator<Review> comparator = comparatorFor(order.getProperty());
+
+            if (order.isDescending()) {
+                comparator = comparator.reversed();
+            }
+
+            combinedComparator = combinedComparator == null
+                    ? comparator
+                    : combinedComparator.thenComparing(comparator);
+        }
+
+        sortedReviews.sort(combinedComparator);
+        return sortedReviews;
+    }
+
+    private Comparator<Review> comparatorFor(String sortBy) {
+        return switch (sortBy == null ? "" : sortBy.toLowerCase()) {
+            case "id" -> Comparator.comparing(Review::getId, Comparator.nullsLast(Long::compareTo));
+            case "promptid" -> Comparator.comparing(Review::getPromptId, Comparator.nullsLast(Long::compareTo));
+            case "reviewername" -> Comparator.comparing(Review::getReviewerName, Comparator.nullsLast(String::compareToIgnoreCase));
+            case "rating" -> Comparator.comparing(Review::getRating, Comparator.nullsLast(Integer::compareTo));
+            case "createdat" -> Comparator.comparing(Review::getCreatedAt, Comparator.nullsLast(LocalDateTime::compareTo));
+            default -> throw new IllegalArgumentException(
+                    "Invalid sortBy field. Allowed values: id, promptId, reviewerName, rating, createdAt");
+        };
     }
 }

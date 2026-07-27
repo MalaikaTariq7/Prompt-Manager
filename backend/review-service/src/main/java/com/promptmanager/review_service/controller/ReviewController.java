@@ -2,6 +2,7 @@ package com.promptmanager.review_service.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,8 @@ import com.promptmanager.review_service.dto.ReviewResponse;
 import com.promptmanager.review_service.service.ReviewDigestService;
 import com.promptmanager.review_service.service.ReviewService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 
 @RestController
@@ -50,12 +53,38 @@ public class ReviewController {
         );
     }
 
+    @Operation(summary = "Get paginated reviews")
     @GetMapping
-    public ResponseEntity<List<ReviewResponse>>
-            getAllReviews() {
+    public ResponseEntity<Page<ReviewResponse>>
+            getReviews(
+                    @Parameter(description = "Zero-based page number")
+                    @RequestParam(defaultValue = "0")
+                    int page,
+
+                    @Parameter(description = "Page size")
+                    @RequestParam(defaultValue = "10")
+                    int size,
+
+                    @Parameter(description = "Sort field: id, promptId, reviewerName, rating, createdAt")
+                    @RequestParam(defaultValue = "createdAt")
+                    String sortBy,
+
+                    @Parameter(description = "Sort direction: asc or desc")
+                    @RequestParam(defaultValue = "desc")
+                    String direction,
+
+                    @Parameter(description = "Optional prompt id filter")
+                    @RequestParam(required = false)
+                    Long promptId) {
 
         return ResponseEntity.ok(
-                reviewService.getAllReviews()
+                reviewService.getReviews(
+                        page,
+                        size,
+                        sortBy,
+                        direction,
+                        promptId
+                )
         );
     }
 
@@ -136,33 +165,6 @@ public class ReviewController {
 
         return ResponseEntity.ok(
                 reviewService.searchReviewer(name)
-        );
-    }
-
-    @GetMapping("/page")
-    public ResponseEntity<List<ReviewResponse>>
-            getPaginatedReviews(
-                    @RequestParam(defaultValue = "0")
-                    int page,
-
-                    @RequestParam(defaultValue = "5")
-                    int size,
-
-                    @RequestParam(
-                            defaultValue = "createdAt"
-                    )
-                    String sortBy,
-
-                    @RequestParam(defaultValue = "desc")
-                    String direction) {
-
-        return ResponseEntity.ok(
-                reviewService.getPaginatedReviews(
-                        page,
-                        size,
-                        sortBy,
-                        direction
-                )
         );
     }
 }

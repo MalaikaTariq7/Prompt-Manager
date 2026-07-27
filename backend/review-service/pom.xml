@@ -40,6 +40,12 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+
+        <!-- Spring Data pagination types -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-commons</artifactId>
+        </dependency>
         <!-- Swagger -->
         <dependency>
             <groupId>org.springdoc</groupId>

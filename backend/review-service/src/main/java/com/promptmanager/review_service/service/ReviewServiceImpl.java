@@ -2,7 +2,11 @@ package com.promptmanager.review_service.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.promptmanager.review_service.dto.ReviewRequest;
@@ -14,6 +18,14 @@ import com.promptmanager.review_service.repository.JsonReviewRepository;
 
 @Service
 public class ReviewServiceImpl implements ReviewService {
+
+    private static final Set<String> VALID_SORT_FIELDS = Set.of(
+            "id",
+            "promptId",
+            "reviewerName",
+            "rating",
+            "createdAt"
+    );
 
     private final JsonReviewRepository repository;
     private final PromptServiceClient promptServiceClient;
@@ -66,6 +78,34 @@ public class ReviewServiceImpl implements ReviewService {
                 .stream()
                 .map(ReviewMapper::toResponse)
                 .toList();
+    }
+
+    @Override
+    public Page<ReviewResponse> getReviews(
+            int page,
+            int size,
+            String sortBy,
+            String direction,
+            Long promptId) {
+
+        validatePaginationParameters(
+                page,
+                size,
+                sortBy,
+                direction
+        );
+
+        Sort.Direction sortDirection =
+                Sort.Direction.fromString(direction);
+
+        PageRequest pageRequest = PageRequest.of(
+                page,
+                size,
+                Sort.by(sortDirection, sortBy)
+        );
+
+        return repository.findAll(pageRequest, promptId)
+                .map(ReviewMapper::toResponse);
     }
 
     @Override
@@ -176,37 +216,36 @@ public class ReviewServiceImpl implements ReviewService {
                 .toList();
     }
 
-    @Override
-    public List<ReviewResponse> getPaginatedReviews(
+    private void validatePaginationParameters(
             int page,
             int size,
             String sortBy,
             String direction) {
 
-        List<Review> reviews =
-                repository.findAll();
-
-        reviews = repository.sort(
-                reviews,
-                sortBy,
-                direction
-        );
-
-        int start = page * size;
-
-        if (start >= reviews.size()) {
-            return List.of();
+        if (page < 0) {
+            throw new IllegalArgumentException(
+                    "page must be greater than or equal to 0");
         }
 
-        int end = Math.min(
-                start + size,
-                reviews.size()
-        );
+        if (size <= 0) {
+            throw new IllegalArgumentException(
+                    "size must be greater than 0");
+        }
 
-        return reviews.subList(start, end)
-                .stream()
-                .map(ReviewMapper::toResponse)
-                .toList();
+        if (direction == null
+                || !("asc".equalsIgnoreCase(direction)
+                || "desc".equalsIgnoreCase(direction))) {
+
+            throw new IllegalArgumentException(
+                    "direction must be either asc or desc");
+        }
+
+        if (sortBy == null
+                || !VALID_SORT_FIELDS.contains(sortBy)) {
+
+            throw new IllegalArgumentException(
+                    "sortBy must be one of: id, promptId, reviewerName, rating, createdAt");
+        }
     }
 
     private List<Review> sortReviewsNewestFirst(
