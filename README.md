@@ -1,78 +1,109 @@
 # Prompt Manager System
 
-Prompt Manager System is a local microservices application for creating, managing, and reviewing AI prompts. It can be shared through one public ngrok link without Docker.
+Prompt Manager System is a Spring Boot microservices project for creating AI prompts and collecting reviews for them. Week 2 extends the Week 1 CRUD system with JWT authentication, Cloudinary file attachments, caching, scheduled review digests, asynchronous notification logging, and paginated list endpoints.
 
 ## Project Structure
 
 ```text
 PromptManagerSystem/
 +-- backend/
-|   +-- api-gateway/       # Optional gateway, not needed for ngrok sharing
-|   +-- prompt-service/    # Prompt CRUD API on port 8081
-|   +-- review-service/    # Prompt review API on port 8082
+|   +-- prompt-service/    # Prompt CRUD, auth, Cloudinary, cache on port 8081
+|   +-- review-service/    # Reviews, digest, async notification on port 8082
+|   +-- api-gateway/       # Optional gateway
 +-- frontend/              # React + Vite UI on port 3000
 +-- nginx/                 # Optional Docker reverse proxy config
 +-- scripts/               # Local reset helpers
-+-- .env                   # Local environment variables
-+-- .env.example           # Example environment variables
++-- .env.example           # Placeholder environment variables
 +-- docker-compose.yml     # Optional Docker setup
 ```
 
-## One-Link Ngrok Setup Without Docker
+## Week 2 Features
 
-This setup exposes only the frontend through ngrok. The frontend uses Vite's local proxy to forward API calls:
+- JWT login is provided by `prompt-service` at `POST /api/auth/login`.
+- Both `prompt-service` and `review-service` validate `Authorization: Bearer <token>`.
+- Prompts can have one Cloudinary attachment stored as `attachmentUrl` and `attachmentPublicId`.
+- `GET /api/prompts/{id}` is cached with Spring Cache and evicted/updated on prompt changes.
+- `review-service` runs a scheduled digest job and exposes the latest digest.
+- Review creation triggers an async notification task that writes to `notifications.log`.
+- Review listing uses `Page`, `Pageable`, and `PageImpl` with metadata.
 
-```text
-ngrok public URL -> Vite frontend on localhost:3000
-/api/prompts    -> prompt-service on localhost:8081
-/api/reviews    -> review-service on localhost:8082
-```
-
-Because the browser calls relative `/api/...` URLs, users only need the one ngrok link.
-
-
-## Architecture Diagram
+## Architecture
 
 ```mermaid
 flowchart LR
-    User[User Browser] --> Ngrok[ngrok Public URL]
-    Ngrok --> Vite[React + Vite Frontend<br/>localhost:3000]
+    Client[Client / Swagger / Frontend] --> Auth[POST /api/auth/login]
+    Auth --> Token[JWT Token]
 
-    Vite -->|/api/prompts| PromptController[Prompt Controller<br/>/api/prompts]
-    Vite -->|/api/reviews| ReviewController[Review Controller<br/>/api/reviews]
+    Client -->|Bearer JWT| PromptAPI[prompt-service<br/>localhost:8081]
+    Client -->|Bearer JWT| ReviewAPI[review-service<br/>localhost:8082]
 
-    subgraph PromptService[Prompt Service - localhost:8081]
-        PromptController --> PromptServiceLayer[Prompt Service Layer]
-        PromptServiceLayer --> PromptRepository[Prompt Repository]
-        PromptRepository --> PostgreSQL[(PostgreSQL<br/>prompt_manager DB)]
+    subgraph PromptService[prompt-service]
+        PromptAPI --> PromptSecurity[JWT Filter]
+        PromptSecurity --> PromptController[Prompt Controller]
+        PromptController --> PromptServiceLayer[Prompt Service]
+        PromptServiceLayer --> PromptCache[Spring Cache<br/>single prompt lookups]
+        PromptServiceLayer --> PromptRepo[Prompt Repository]
+        PromptRepo --> Postgres[(PostgreSQL<br/>prompt_manager)]
+        PromptServiceLayer --> Cloudinary[Cloudinary<br/>attachments]
     end
 
-    subgraph ReviewService[Review Service - localhost:8082]
-        ReviewController --> ReviewServiceLayer[Review Service Layer]
-        ReviewServiceLayer --> JsonReviewRepository[JSON Review Repository]
-        JsonReviewRepository --> ReviewsJson[(reviews.json)]
-        ReviewServiceLayer -->|validate promptId| PromptClient[Prompt Service Client]
+    subgraph ReviewService[review-service]
+        ReviewAPI --> ReviewSecurity[JWT Filter]
+        ReviewSecurity --> ReviewController[Review Controller]
+        ReviewController --> ReviewServiceLayer[Review Service]
+        ReviewServiceLayer --> JsonRepo[JSON Review Repository]
+        JsonRepo --> ReviewsJson[(reviews.json)]
+        ReviewServiceLayer --> AsyncNotify[@Async Notification]
+        AsyncNotify --> NotificationLog[(notifications.log)]
+        DigestJob[@Scheduled Digest Job] --> JsonRepo
+        DigestJob --> LatestDigest[Latest Digest In Memory]
+        ReviewServiceLayer --> PromptClient[Prompt Service Client]
     end
 
-    PromptClient -->|GET /api/prompts/:id| PromptController
+    PromptClient -->|GET /api/prompts/{id}| PromptAPI
 ```
-
-## Service Flow
-
-- Users access one ngrok URL, which forwards traffic to the Vite frontend on `localhost:3000`.
-- The frontend sends relative API requests so `/api/prompts` and `/api/reviews` stay under the same public link.
-- Vite proxies prompt requests to the prompt service on `localhost:8081`.
-- Vite proxies review requests to the review service on `localhost:8082`.
-- The prompt service stores prompt data in PostgreSQL.
-- The review service stores review data in `backend/review-service/reviews.json` and checks the prompt service before creating or updating reviews.
 
 ## Requirements
 
 - Java 17+
 - Maven 3.8+
-- Node.js 18+
+- Node.js 18+ for the frontend
 - PostgreSQL 13+
-- ngrok account and ngrok CLI
+- Cloudinary account for real attachment uploads
+
+## Environment Variables
+
+Use `.env.example` as the template. Do not commit real secrets.
+
+```text
+JWT_SECRET=replace-with-a-secret-of-at-least-32-characters
+JWT_EXPIRATION_MS=3600000
+AUTH_USERNAME=admin
+AUTH_PASSWORD=replace-with-login-password
+
+CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
+CLOUDINARY_API_KEY=your-cloudinary-api-key
+CLOUDINARY_API_SECRET=your-cloudinary-api-secret
+
+DIGEST_INTERVAL_MS=30000
+DIGEST_INITIAL_DELAY_MS=5000
+NOTIFICATION_LOG_FILE=notifications.log
+NOTIFICATION_DELAY_MS=3000
+
+REVIEW_STORAGE_FILE=reviews.json
+PROMPT_SERVICE_URL=http://localhost:8081
+```
+
+For local PowerShell runs, set values before starting the service:
+
+```powershell
+$env:JWT_SECRET="replace-with-a-secret-of-at-least-32-characters"
+$env:AUTH_USERNAME="admin"
+$env:AUTH_PASSWORD="password"
+$env:CLOUDINARY_CLOUD_NAME="your-cloud-name"
+$env:CLOUDINARY_API_KEY="your-api-key"
+$env:CLOUDINARY_API_SECRET="your-api-secret"
+```
 
 ## First-Time Setup
 
@@ -89,71 +120,241 @@ cd frontend
 npm install
 ```
 
-If ngrok is not configured yet, add your token once:
+## Start Locally
 
-```powershell
-ngrok config add-authtoken YOUR_NGROK_TOKEN
-```
+Open separate terminals from the project root.
 
-## Start The App Locally
-
-Open three terminals from the project root.
-
-Terminal 1, prompt service:
+Prompt service:
 
 ```powershell
 cd backend/prompt-service
 mvn spring-boot:run
 ```
 
-Terminal 2, review service:
+Review service:
 
 ```powershell
 cd backend/review-service
 mvn spring-boot:run
 ```
 
-Terminal 3, frontend:
+Frontend:
 
 ```powershell
 cd frontend
 npm run dev
 ```
 
-Check locally:
+## Swagger
 
 ```text
-http://localhost:3000
+Prompt Swagger: http://localhost:8081/swagger-ui/index.html
+Review Swagger: http://localhost:8082/swagger-ui/index.html
 ```
 
-## Share With Ngrok
+## Authentication
 
-Open a fourth terminal and run:
+Login through `prompt-service`:
 
 ```powershell
-ngrok http 3000
+$response = curl.exe -X POST "http://localhost:8081/api/auth/login" `
+-H "Content-Type: application/json" `
+-d '{"username":"admin","password":"password"}'
+
+$token = ($response | ConvertFrom-Json).token
 ```
 
-ngrok will show a public forwarding URL like:
+Use the token on protected endpoints:
 
-```text
-https://your-url.ngrok-free.app
+```powershell
+-H "Authorization: Bearer $token"
 ```
 
-Share that one URL. Prompt creation, prompt updates, and reviews will work through the same link as long as the prompt service, review service, and frontend are still running locally.
+## Prompt API
 
-## Ports
+Create a prompt:
 
-```text
-Frontend:       http://localhost:3000
-Prompt API:     http://localhost:8081/api/prompts
-Review API:     http://localhost:8082/api/reviews
-Ngrok command:  ngrok http 3000
+```powershell
+curl.exe -X POST "http://localhost:8081/api/prompts" `
+-H "Authorization: Bearer $token" `
+-H "Content-Type: application/json" `
+-d '{"title":"Email helper","description":"Writes a short email","promptText":"Write a polite email","category":"writing"}'
+```
+
+Get paginated prompts:
+
+```powershell
+curl.exe -X GET "http://localhost:8081/api/prompts?page=0&size=10&sortBy=createdAt&direction=desc" `
+-H "Authorization: Bearer $token"
+```
+
+Filter paginated prompts by tag:
+
+```powershell
+curl.exe -X GET "http://localhost:8081/api/prompts?page=0&size=10&sortBy=createdAt&direction=desc&tag=writing" `
+-H "Authorization: Bearer $token"
+```
+
+Get a prompt by id:
+
+```powershell
+curl.exe -X GET "http://localhost:8081/api/prompts/1" `
+-H "Authorization: Bearer $token"
+```
+
+
+Search and category filters:
+
+```powershell
+curl.exe -X GET "http://localhost:8081/api/prompts/search?title=email" `
+-H "Authorization: Bearer $token"
+
+curl.exe -X GET "http://localhost:8081/api/prompts/category?category=writing" `
+-H "Authorization: Bearer $token"
+```
+
+## Cloudinary Attachments
+
+Create a test file:
+
+```powershell
+"hello attachment" | Set-Content "C:\tmp\test.txt"
+```
+
+Upload one attachment to a prompt:
+
+```powershell
+curl.exe -X POST `
+"http://localhost:8081/api/prompts/1/attachment" `
+-H "Authorization: Bearer $token" `
+-F "file=@C:\tmp\test.txt"
+```
+
+Delete a prompt attachment:
+
+```powershell
+curl.exe -X DELETE "http://localhost:8081/api/prompts/1/attachment" `
+-H "Authorization: Bearer $token"
+```
+
+The API stores only the Cloudinary secure URL and public id in PostgreSQL. It does not store file bytes in the database.
+
+## Cache Demo
+
+`GET /api/prompts/{id}` is cached. Call the same prompt twice:
+
+```powershell
+curl.exe -X GET "http://localhost:8081/api/prompts/1" `
+-H "Authorization: Bearer $token"
+
+curl.exe -X GET "http://localhost:8081/api/prompts/1" `
+-H "Authorization: Bearer $token"
+```
+
+The service logs `DATABASE HIT: Loading prompt with id ...` only when the lookup reaches the database. Updates, deletes, and attachment changes refresh or evict the cache.
+
+## Review API
+
+Create a review:
+
+```powershell
+curl.exe -X POST "http://localhost:8082/api/reviews" `
+-H "Authorization: Bearer $token" `
+-H "Content-Type: application/json" `
+-d '{"promptId":1,"reviewerName":"Malaika","rating":5,"comment":"Excellent prompt"}'
+```
+
+Get paginated reviews:
+
+```powershell
+curl.exe -X GET "http://localhost:8082/api/reviews" `
+-H "Authorization: Bearer $token"
+```
+
+```powershell
+curl.exe -X GET "http://localhost:8082/api/reviews?page=1&size=5&sortBy=rating&direction=desc" `
+-H "Authorization: Bearer $token"
+```
+
+Filter reviews by prompt id:
+
+```powershell
+curl.exe -X GET "http://localhost:8082/api/reviews?page=0&size=10&sortBy=createdAt&direction=asc&promptId=1" `
+-H "Authorization: Bearer $token"
+```
+
+Other review endpoints:
+
+```powershell
+curl.exe -X GET "http://localhost:8082/api/reviews/1" `
+-H "Authorization: Bearer $token"
+
+curl.exe -X GET "http://localhost:8082/api/reviews/prompt/1" `
+-H "Authorization: Bearer $token"
+
+curl.exe -X GET "http://localhost:8082/api/reviews/rating/5" `
+-H "Authorization: Bearer $token"
+
+curl.exe -X GET "http://localhost:8082/api/reviews/reviewer?name=Malaika" `
+-H "Authorization: Bearer $token"
+```
+
+## Review Page Response Shape
+
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "promptId": 1,
+      "reviewerName": "Malaika",
+      "rating": 5,
+      "comment": "Excellent prompt",
+      "createdAt": "2026-07-25T22:34:04.1017297"
+    }
+  ],
+  "pageable": {
+    "pageNumber": 0,
+    "pageSize": 10
+  },
+  "totalElements": 1,
+  "totalPages": 1,
+  "size": 10,
+  "number": 0,
+  "first": true,
+  "last": true,
+  "numberOfElements": 1,
+  "empty": false
+}
+```
+
+## Scheduled Digest
+
+The digest job runs on `DIGEST_INTERVAL_MS` and computes:
+
+- total review count
+- average review score
+- highest scoring prompt id
+- generation timestamp
+
+Get the latest digest:
+
+```powershell
+curl.exe -X GET "http://localhost:8082/api/reviews/digest/latest" `
+-H "Authorization: Bearer $token"
+```
+
+## Async Notification
+
+After `POST /api/reviews` saves a review, an async task writes a notification line to `notifications.log`. The API response returns before the delayed notification task finishes.
+
+Check the log:
+
+```powershell
+Get-Content "backend/review-service/notifications.log"
 ```
 
 ## Reset Local Data
-
-To start with no prompts or reviews:
 
 ```powershell
 ./scripts/reset-dev-data.ps1
@@ -161,4 +362,33 @@ To start with no prompts or reviews:
 
 This clears `backend/review-service/reviews.json` and truncates the local PostgreSQL `prompts` table.
 
+## Tests
 
+Run prompt-service tests:
+
+```powershell
+cd backend/prompt-service
+mvn test
+```
+
+Run review-service tests:
+
+```powershell
+cd backend/review-service
+mvn test
+```
+
+Current verified result:
+
+```text
+prompt-service: 7 tests, passing
+review-service: 10 tests, passing
+```
+
+## Current Week 2 Notes
+
+- `GET /api/prompts` is Week 2 compliant: `page`, `size`, `sortBy`, `direction`, and `tag`.
+- `GET /api/reviews` is Week 2 compliant: `page`, `size`, `sortBy`, `direction`, and `promptId`.
+- Prompt `tag` filtering maps to the existing `category` field.
+- Dummy fallback values in `application.properties` allow local startup, but real Cloudinary uploads require real Cloudinary environment variables.
+- Do not commit generated runtime files such as `reviews.json` or `notifications.log`.

@@ -2,6 +2,7 @@ package com.promptmanager.prompt_service.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -23,6 +24,17 @@ import com.promptmanager.prompt_service.repository.PromptRepository;
 public class PromptServiceImpl implements PromptService {
 
     private static final String PROMPT_CACHE = "prompts";
+
+    private static final Set<String> VALID_SORT_FIELDS = Set.of(
+            "id",
+            "title",
+            "description",
+            "promptText",
+            "category",
+            "createdAt",
+            "attachmentUrl",
+            "attachmentPublicId"
+    );
 
     private final PromptRepository promptRepository;
     private final CloudinaryService cloudinaryService;
@@ -214,18 +226,65 @@ public class PromptServiceImpl implements PromptService {
             int page,
             int size,
             String sortBy,
+            String direction,
+            String tag) {
+
+        validatePaginationParameters(
+                page,
+                size,
+                sortBy,
+                direction
+        );
+
+        Sort.Direction sortDirection =
+                Sort.Direction.fromString(direction);
+
+        PageRequest pageRequest = PageRequest.of(
+                page,
+                size,
+                Sort.by(sortDirection, sortBy)
+        );
+
+        Page<Prompt> prompts = tag == null || tag.isBlank()
+                ? promptRepository.findAll(pageRequest)
+                : promptRepository.findByCategoryIgnoreCase(
+                        tag,
+                        pageRequest
+                );
+
+        return prompts.map(PromptMapper::toResponse);
+    }
+
+    private void validatePaginationParameters(
+            int page,
+            int size,
+            String sortBy,
             String direction) {
 
-        Sort sort = direction.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
+        if (page < 0) {
+            throw new IllegalArgumentException(
+                    "page must be greater than or equal to 0");
+        }
 
-        PageRequest pageRequest =
-                PageRequest.of(page, size, sort);
+        if (size <= 0) {
+            throw new IllegalArgumentException(
+                    "size must be greater than 0");
+        }
 
-        return promptRepository
-                .findAll(pageRequest)
-                .map(PromptMapper::toResponse);
+        if (direction == null
+                || !("asc".equalsIgnoreCase(direction)
+                || "desc".equalsIgnoreCase(direction))) {
+
+            throw new IllegalArgumentException(
+                    "direction must be either asc or desc");
+        }
+
+        if (sortBy == null
+                || !VALID_SORT_FIELDS.contains(sortBy)) {
+
+            throw new IllegalArgumentException(
+                    "sortBy must be one of: id, title, description, promptText, category, createdAt, attachmentUrl, attachmentPublicId");
+        }
     }
 
     private Prompt findPromptById(Long id) {

@@ -2,6 +2,8 @@ package com.promptmanager.prompt_service.repository;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,5 +15,7 @@ public interface PromptRepository extends JpaRepository<Prompt, Long> {
     List<Prompt> findByTitleContainingIgnoreCase(String title);
 
     List<Prompt> findByCategoryIgnoreCase(String category);
+
+    Page<Prompt> findByCategoryIgnoreCase(String category, Pageable pageable);
 
 }

@@ -34,10 +34,30 @@ public class PromptController {
         return promptService.createPrompt(request);
     }
 
+    @Operation(summary = "Get paginated prompts")
     @GetMapping
-    public List<PromptResponse> getAllPrompts() {
+    public Page<PromptResponse> getPrompts(
+            @Parameter(description = "Zero-based page number")
+            @RequestParam(defaultValue = "0") int page,
 
-        return promptService.getAllPrompts();
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "10") int size,
+
+            @Parameter(description = "Sort field: id, title, description, promptText, category, createdAt, attachmentUrl, attachmentPublicId")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction: asc or desc")
+            @RequestParam(defaultValue = "desc") String direction,
+
+            @Parameter(description = "Optional tag filter. This maps to the existing category field.")
+            @RequestParam(required = false) String tag) {
+
+        return promptService.getPrompts(
+                page,
+                size,
+                sortBy,
+                direction,
+                tag);
     }
 
     @GetMapping("/{id}")
@@ -98,23 +118,5 @@ public class PromptController {
             @RequestParam String category) {
 
         return promptService.getPromptsByCategory(category);
-    }
-
-    @GetMapping("/page")
-    public Page<PromptResponse> getPrompts(
-
-            @RequestParam(defaultValue = "0") int page,
-
-            @RequestParam(defaultValue = "5") int size,
-
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-
-            @RequestParam(defaultValue = "desc") String direction) {
-
-        return promptService.getPrompts(
-                page,
-                size,
-                sortBy,
-                direction);
     }
 }

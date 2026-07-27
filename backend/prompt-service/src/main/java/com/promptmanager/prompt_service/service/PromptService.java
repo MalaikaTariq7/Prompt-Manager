@@ -32,6 +32,7 @@ public interface PromptService {
             int page,
             int size,
             String sortBy,
-            String direction);
+            String direction,
+            String tag);
 
 }
