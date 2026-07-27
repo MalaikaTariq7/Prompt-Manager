@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: api-gateway
+  config:
+    import: optional:file:.env[.properties],optional:file:../../.env[.properties]
 
   cloud:
     gateway:
@@ -13,19 +15,19 @@ spring:
 
             # Prompt Service APIs
             - id: prompt-service
-              uri: http://localhost:8081
+              uri: ${PROMPT_SERVICE_URL:http://localhost:8081}
               predicates:
                 - Path=/api/prompts,/api/prompts/**
 
             # Review Service APIs
             - id: review-service
-              uri: http://localhost:8082
+              uri: ${REVIEW_SERVICE_URL:http://localhost:8082}
               predicates:
                 - Path=/api/reviews,/api/reviews/**
 
             # Prompt Service Swagger UI
             - id: prompt-swagger
-              uri: http://localhost:8081
+              uri: ${PROMPT_SERVICE_URL:http://localhost:8081}
               predicates:
                 - Path=/prompt/swagger-ui/**
               filters:
@@ -33,7 +35,7 @@ spring:
 
             # Prompt Service OpenAPI Docs
             - id: prompt-api-docs
-              uri: http://localhost:8081
+              uri: ${PROMPT_SERVICE_URL:http://localhost:8081}
               predicates:
                 - Path=/prompt/v3/api-docs/**
               filters:
@@ -41,7 +43,7 @@ spring:
 
             # Review Service Swagger UI
             - id: review-swagger
-              uri: http://localhost:8082
+              uri: ${REVIEW_SERVICE_URL:http://localhost:8082}
               predicates:
                 - Path=/review/swagger-ui/**
               filters:
@@ -49,7 +51,7 @@ spring:
 
             # Review Service OpenAPI Docs
             - id: review-api-docs
-              uri: http://localhost:8082
+              uri: ${REVIEW_SERVICE_URL:http://localhost:8082}
               predicates:
                 - Path=/review/v3/api-docs/**
               filters:
@@ -59,16 +61,13 @@ management:
   endpoints:
     web:
       exposure:
-        include:
-          - health
-          - info
-          - metrics
-          - env
-          - mappings
-
+        exclude:
+          - '*'
+      discovery:
+        enabled: false
   endpoint:
     health:
-      show-details: always
+      show-details: never
 
 info:
   application:
