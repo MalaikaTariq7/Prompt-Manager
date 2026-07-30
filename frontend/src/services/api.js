@@ -1,7 +1,29 @@
 import axios from 'axios'
 
+const TOKEN_KEY = 'prompt-manager-jwt'
+
 const apiHeaders = {
   'ngrok-skip-browser-warning': 'true'
+}
+
+export const getAuthToken = () => localStorage.getItem(TOKEN_KEY)
+
+export const setAuthToken = (token) => {
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+export const clearAuthToken = () => {
+  localStorage.removeItem(TOKEN_KEY)
+}
+
+const attachAuthToken = (config) => {
+  const token = getAuthToken()
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+
+  return config
 }
 
 const promptApi = axios.create({
@@ -14,9 +36,17 @@ const reviewApi = axios.create({
   headers: apiHeaders,
 })
 
+promptApi.interceptors.request.use(attachAuthToken)
+reviewApi.interceptors.request.use(attachAuthToken)
+
+export const authAPI = {
+  login: (credentials) => promptApi.post('/api/auth/login', credentials),
+  logout: () => clearAuthToken(),
+}
+
 export const promptAPI = {
   createPrompt: (data) => promptApi.post('/api/prompts', data),
-  getAllPrompts: () => promptApi.get('/api/prompts'),
+  getAllPrompts: (params = {}) => promptApi.get('/api/prompts', { params }),
   getPromptById: (id) => promptApi.get(`/api/prompts/${id}`),
   updatePrompt: (id, data) => promptApi.put(`/api/prompts/${id}`, data),
   deletePrompt: (id) => promptApi.delete(`/api/prompts/${id}`),
@@ -24,7 +54,7 @@ export const promptAPI = {
 
 export const reviewAPI = {
   createReview: (data) => reviewApi.post('/api/reviews', data),
-  getAllReviews: () => reviewApi.get('/api/reviews'),
+  getAllReviews: (params = {}) => reviewApi.get('/api/reviews', { params }),
   getReviewById: (id) => reviewApi.get(`/api/reviews/${id}`),
   getReviewsByPromptId: (promptId) => reviewApi.get(`/api/reviews/prompt/${promptId}`),
   updateReview: (id, data) => reviewApi.put(`/api/reviews/${id}`, data),

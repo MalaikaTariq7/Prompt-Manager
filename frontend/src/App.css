@@ -330,3 +330,47 @@
   }
 }
 
+
+.login-panel {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.login-form {
+  width: min(100%, 440px);
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.login-heading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  color: #667eea;
+}
+
+.login-heading h2 {
+  margin: 0 0 0.25rem 0;
+  color: #1f2937;
+  font-size: 1.5rem;
+}
+
+.login-heading p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.login-submit {
+  width: 100%;
+}
+
+.login-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}

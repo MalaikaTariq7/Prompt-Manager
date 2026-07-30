@@ -15,6 +15,11 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true,
     proxy: {
+      '/api/auth': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        configure: stripOriginHeader,
+      },
       '/api/prompts': {
         target: 'http://localhost:8081',
         changeOrigin: true,
