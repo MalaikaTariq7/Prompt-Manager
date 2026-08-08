@@ -10,6 +10,7 @@ PromptManagerSystem/
 |   +-- prompt-service/    # Prompt CRUD, auth, Cloudinary, cache on port 8081
 |   +-- review-service/    # Reviews, digest, async notification on port 8082
 |   +-- api-gateway/       # Optional gateway
++-- analytics-service/     # FastAPI analytics service on port 8002
 +-- frontend/              # React + Vite UI on port 3000
 +-- nginx/                 # Optional Docker reverse proxy config
 +-- scripts/               # Local reset helpers
@@ -26,6 +27,8 @@ PromptManagerSystem/
 - `review-service` runs a scheduled digest job and exposes the latest digest.
 - Review creation triggers an async notification task that writes to `notifications.log`.
 - Review listing uses `Page`, `Pageable`, and `PageImpl` with metadata.
+- `analytics-service` provides JWT-protected overview, trend, tag, leaderboard, and correlation endpoints.
+- `analytics-service` logs in to `prompt-service`, stores its service JWT in memory, and re-authenticates automatically after downstream `401` responses.
 
 ## Architecture
 
@@ -36,6 +39,7 @@ flowchart LR
 
     Client -->|Bearer JWT| PromptAPI[prompt-service<br/>localhost:8081]
     Client -->|Bearer JWT| ReviewAPI[review-service<br/>localhost:8082]
+    Client -->|Bearer JWT| AnalyticsAPI[analytics-service<br/>localhost:8002]
 
     subgraph PromptService[prompt-service]
         PromptAPI --> PromptSecurity[JWT Filter]
@@ -58,6 +62,18 @@ flowchart LR
         DigestJob[@Scheduled Digest Job] --> JsonRepo
         DigestJob --> LatestDigest[Latest Digest In Memory]
         ReviewServiceLayer --> PromptClient[Prompt Service Client]
+    end
+
+    subgraph AnalyticsService[analytics-service]
+        AnalyticsAPI --> AnalyticsSecurity[JWT Dependency]
+        AnalyticsSecurity --> AnalyticsRouter[Analytics Router]
+        AnalyticsRouter --> AnalyticsLayer[Analytics Service]
+        AnalyticsLayer --> Snapshot[(In-Memory Pandas Snapshot)]
+        Scheduler[@Scheduled Refresh] --> DataCollector[Data Collector]
+        DataCollector -->|service JWT| PromptAPI
+        DataCollector -->|service JWT| ReviewAPI
+        AuthClient[Service Auth Client] -->|POST /api/auth/login| Auth
+        AuthClient -->|cache JWT + retry after 401| DataCollector
     end
 
     PromptClient -->|GET /api/prompts/{id}| PromptAPI
@@ -92,6 +108,11 @@ NOTIFICATION_DELAY_MS=3000
 
 REVIEW_STORAGE_FILE=reviews.json
 PROMPT_SERVICE_URL=http://localhost:8081
+REVIEW_SERVICE_URL=http://localhost:8082
+ANALYTICS_SERVICE_PORT=8002
+ANALYTICS_SERVICE_USERNAME=admin
+ANALYTICS_SERVICE_PASSWORD=password
+ANALYTICS_REFRESH_INTERVAL_SEC=60
 ```
 
 For local PowerShell runs, set values before starting the service:
@@ -138,6 +159,14 @@ cd backend/review-service
 mvn spring-boot:run
 ```
 
+Analytics service:
+
+```powershell
+cd analytics-service
+.\venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload --port 8002
+```
+
 Frontend:
 
 ```powershell
@@ -150,6 +179,7 @@ npm run dev
 ```text
 Prompt Swagger: http://localhost:8081/swagger-ui/index.html
 Review Swagger: http://localhost:8082/swagger-ui/index.html
+Analytics OpenAPI: http://localhost:8002/docs
 ```
 
 ## Authentication
@@ -354,6 +384,48 @@ Check the log:
 Get-Content "backend/review-service/notifications.log"
 ```
 
+
+## Analytics API
+
+The FastAPI analytics service is protected by the same JWT secret as the Java services. It refreshes data from prompt-service and review-service on startup and then on `ANALYTICS_REFRESH_INTERVAL_SEC`.
+
+Get the current analytics snapshot status:
+
+```powershell
+curl.exe -X GET "http://localhost:8002/api/analytics/snapshot" `
+-H "Authorization: Bearer $token"
+```
+
+Five analytics endpoints:
+
+```powershell
+curl.exe -X GET "http://localhost:8002/api/analytics/overview" `
+-H "Authorization: Bearer $token"
+
+curl.exe -X GET "http://localhost:8002/api/analytics/trends?interval=day&days=30" `
+-H "Authorization: Bearer $token"
+
+curl.exe -X GET "http://localhost:8002/api/analytics/tags" `
+-H "Authorization: Bearer $token"
+
+curl.exe -X GET "http://localhost:8002/api/analytics/leaderboard" `
+-H "Authorization: Bearer $token"
+
+curl.exe -X GET "http://localhost:8002/api/analytics/correlation" `
+-H "Authorization: Bearer $token"
+```
+
+Error handling notes:
+
+- Missing, invalid, and expired JWTs return `401` with a clear message.
+- Invalid query parameters return a structured `422` response.
+- If prompt-service or review-service is offline during refresh, analytics-service keeps the previous snapshot and records `lastRefreshError` instead of crashing.
+
+Supporting submission docs:
+
+- One-page insights report: `docs/analytics-insights-report.md`
+- Three-service demo steps: `docs/three-service-integration-demo.md`
+
 ## Reset Local Data
 
 ```powershell
@@ -378,11 +450,19 @@ cd backend/review-service
 mvn test
 ```
 
+Run analytics-service tests:
+
+```powershell
+cd analytics-service
+.\venv\Scripts\python.exe -m pytest -q
+```
+
 Current verified result:
 
 ```text
 prompt-service: 7 tests, passing
 review-service: 10 tests, passing
+analytics-service: 21 tests, passing
 ```
 
 ## Current Week 2 Notes

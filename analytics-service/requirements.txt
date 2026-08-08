@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pandas
+httpx
+PyJWT
+APScheduler
+python-dotenv
+pydantic-settings
+pytest
+pytest-asyncio
