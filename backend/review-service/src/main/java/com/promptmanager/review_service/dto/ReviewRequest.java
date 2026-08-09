@@ -7,8 +7,8 @@ import jakarta.validation.constraints.NotNull;
 
 public class ReviewRequest {
 
-    @NotNull(message = "Prompt ID is required")
-    private Long promptId;
+    @NotBlank(message = "Prompt ID is required")
+    private String promptId;
 
     @NotBlank(message = "Reviewer name is required")
     private String reviewerName;
@@ -24,11 +24,11 @@ public class ReviewRequest {
     public ReviewRequest() {
     }
 
-    public Long getPromptId() {
+    public String getPromptId() {
         return promptId;
     }
 
-    public void setPromptId(Long promptId) {
+    public void setPromptId(String promptId) {
         this.promptId = promptId;
     }
 

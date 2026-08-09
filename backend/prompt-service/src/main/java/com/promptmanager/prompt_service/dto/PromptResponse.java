@@ -1,10 +1,11 @@
 package com.promptmanager.prompt_service.dto;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class PromptResponse {
 
-    private Long id;
+    private UUID id;
 
     private String title;
 
@@ -18,12 +19,10 @@ public class PromptResponse {
 
     private String attachmentUrl;
 
-    // Default Constructor
     public PromptResponse() {
     }
 
-    // Parameterized Constructor
-    public PromptResponse(Long id,
+    public PromptResponse(UUID id,
                           String title,
                           String description,
                           String promptText,
@@ -38,7 +37,7 @@ public class PromptResponse {
         this.createdAt = createdAt;
     }
 
-    public PromptResponse(Long id,
+    public PromptResponse(UUID id,
                           String title,
                           String description,
                           String promptText,
@@ -50,13 +49,11 @@ public class PromptResponse {
         this.attachmentUrl = attachmentUrl;
     }
 
-    // Getters & Setters
-
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

@@ -13,6 +13,9 @@ from app.services.data_collector import data_collector
 
 TEST_SECRET = "test-jwt-secret-that-is-at-least-32-chars"
 TEST_ALGORITHM = "HS256"
+PROMPT_ONE_ID = "00000000-0000-0000-0000-000000000001"
+PROMPT_TWO_ID = "00000000-0000-0000-0000-000000000002"
+PROMPT_THREE_ID = "00000000-0000-0000-0000-000000000003"
 
 
 def override_settings() -> Settings:
@@ -51,7 +54,7 @@ def seeded_snapshot():
     data_collector.prompts_df = pd.DataFrame(
         [
             {
-                "id": 1,
+                "id": PROMPT_ONE_ID,
                 "title": "Email helper",
                 "description": "Writes concise email drafts",
                 "promptText": "Write a concise, polite email reply.",
@@ -60,7 +63,7 @@ def seeded_snapshot():
                 "attachmentUrl": "https://example.com/email.txt",
             },
             {
-                "id": 2,
+                "id": PROMPT_TWO_ID,
                 "title": "Code reviewer",
                 "description": "Finds implementation risks",
                 "promptText": "Review this code carefully and list concrete risks.",
@@ -69,7 +72,7 @@ def seeded_snapshot():
                 "attachmentUrl": "",
             },
             {
-                "id": 3,
+                "id": PROMPT_THREE_ID,
                 "title": "Lesson planner",
                 "description": "Plans a class activity",
                 "promptText": "Create a lesson plan with learning objectives and checks.",
@@ -84,7 +87,7 @@ def seeded_snapshot():
         [
             {
                 "id": 1,
-                "promptId": 1,
+                "promptId": PROMPT_ONE_ID,
                 "reviewerName": "Malaika",
                 "rating": 5,
                 "comment": "Excellent prompt",
@@ -92,7 +95,7 @@ def seeded_snapshot():
             },
             {
                 "id": 2,
-                "promptId": 1,
+                "promptId": PROMPT_ONE_ID,
                 "reviewerName": "Ali",
                 "rating": 4,
                 "comment": "Useful",
@@ -100,7 +103,7 @@ def seeded_snapshot():
             },
             {
                 "id": 3,
-                "promptId": 2,
+                "promptId": PROMPT_TWO_ID,
                 "reviewerName": "Malaika",
                 "rating": 3,
                 "comment": "Needs specificity",
@@ -108,7 +111,7 @@ def seeded_snapshot():
             },
             {
                 "id": 4,
-                "promptId": 2,
+                "promptId": PROMPT_TWO_ID,
                 "reviewerName": "Sara",
                 "rating": 4,
                 "comment": "Good structure",
@@ -193,8 +196,8 @@ async def test_leaderboard_endpoint(seeded_snapshot, client, auth_headers) -> No
     body = response.json()
     assert body["minimumReviewsRequired"] == 2
     assert body["topReviewers"][0] == {"reviewerName": "Malaika", "reviewCount": 2}
-    assert body["topPrompts"][0]["promptId"] == 1
-    assert body["bottomPrompts"][0]["promptId"] == 2
+    assert body["topPrompts"][0]["promptId"] == PROMPT_ONE_ID
+    assert body["bottomPrompts"][0]["promptId"] == PROMPT_TWO_ID
 
 
 @pytest.mark.asyncio

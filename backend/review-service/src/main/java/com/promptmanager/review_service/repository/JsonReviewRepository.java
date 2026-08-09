@@ -78,7 +78,7 @@ public class JsonReviewRepository {
         return readAll();
     }
 
-    public Page<Review> findAll(Pageable pageable, Long promptId) {
+    public Page<Review> findAll(Pageable pageable, String promptId) {
         List<Review> reviews = readAll().stream()
                 .filter(review -> promptId == null
                         || promptId.equals(review.getPromptId()))
@@ -147,7 +147,7 @@ public class JsonReviewRepository {
         writeAll(reviews);
     }
 
-    public List<Review> findByPromptId(Long promptId) {
+    public List<Review> findByPromptId(String promptId) {
         return readAll().stream()
                 .filter(review -> review.getPromptId().equals(promptId))
                 .toList();
@@ -207,7 +207,7 @@ public class JsonReviewRepository {
     private Comparator<Review> comparatorFor(String sortBy) {
         return switch (sortBy == null ? "" : sortBy.toLowerCase()) {
             case "id" -> Comparator.comparing(Review::getId, Comparator.nullsLast(Long::compareTo));
-            case "promptid" -> Comparator.comparing(Review::getPromptId, Comparator.nullsLast(Long::compareTo));
+            case "promptid" -> Comparator.comparing(Review::getPromptId, Comparator.nullsLast(String::compareTo));
             case "reviewername" -> Comparator.comparing(Review::getReviewerName, Comparator.nullsLast(String::compareToIgnoreCase));
             case "rating" -> Comparator.comparing(Review::getRating, Comparator.nullsLast(Integer::compareTo));
             case "createdat" -> Comparator.comparing(Review::getCreatedAt, Comparator.nullsLast(LocalDateTime::compareTo));

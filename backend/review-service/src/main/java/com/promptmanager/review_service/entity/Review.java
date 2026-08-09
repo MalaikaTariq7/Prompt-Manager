@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 public class Review {
 
     private Long id;
-    private Long promptId;
+    private String promptId;
     private String reviewerName;
     private Integer rating;
     private String comment;
@@ -14,7 +14,7 @@ public class Review {
     public Review() {
     }
 
-    public Review(Long id, Long promptId, String reviewerName, Integer rating, String comment, LocalDateTime createdAt) {
+    public Review(Long id, String promptId, String reviewerName, Integer rating, String comment, LocalDateTime createdAt) {
         this.id = id;
         this.promptId = promptId;
         this.reviewerName = reviewerName;
@@ -31,11 +31,11 @@ public class Review {
         this.id = id;
     }
 
-    public Long getPromptId() {
+    public String getPromptId() {
         return promptId;
     }
 
-    public void setPromptId(Long promptId) {
+    public void setPromptId(String promptId) {
         this.promptId = promptId;
     }
 

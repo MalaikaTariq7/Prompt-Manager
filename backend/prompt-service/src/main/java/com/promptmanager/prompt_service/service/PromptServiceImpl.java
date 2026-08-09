@@ -3,6 +3,7 @@ package com.promptmanager.prompt_service.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -49,9 +50,7 @@ public class PromptServiceImpl implements PromptService {
 
     @Override
     public PromptResponse createPrompt(PromptRequest request) {
-
         Prompt prompt = PromptMapper.toEntity(request);
-
         prompt.setCreatedAt(LocalDateTime.now());
 
         Prompt savedPrompt = promptRepository.save(prompt);
@@ -61,7 +60,6 @@ public class PromptServiceImpl implements PromptService {
 
     @Override
     public List<PromptResponse> getAllPrompts() {
-
         return promptRepository
                 .findAll(
                         Sort.by(Sort.Direction.DESC, "createdAt")
@@ -74,18 +72,12 @@ public class PromptServiceImpl implements PromptService {
 
     @Override
     @Cacheable(value = PROMPT_CACHE, key = "#id")
-    public PromptResponse getPromptById(Long id) {
-
+    public PromptResponse getPromptById(UUID id) {
         System.out.println(
                 "DATABASE HIT: Loading prompt with id " + id
         );
 
-        Prompt prompt = promptRepository.findById(id)
-                .orElseThrow(() ->
-                        new PromptNotFoundException(
-                                "Prompt not found with id : " + id
-                        )
-                );
+        Prompt prompt = findPromptById(id);
 
         return PromptMapper.toResponse(prompt);
     }
@@ -93,15 +85,10 @@ public class PromptServiceImpl implements PromptService {
     @Override
     @CachePut(value = PROMPT_CACHE, key = "#id")
     public PromptResponse updatePrompt(
-            Long id,
+            UUID id,
             PromptRequest request) {
 
-        Prompt prompt = promptRepository.findById(id)
-                .orElseThrow(() ->
-                        new PromptNotFoundException(
-                                "Prompt not found with id : " + id
-                        )
-                );
+        Prompt prompt = findPromptById(id);
 
         prompt.setTitle(request.getTitle());
         prompt.setDescription(request.getDescription());
@@ -115,14 +102,8 @@ public class PromptServiceImpl implements PromptService {
 
     @Override
     @CacheEvict(value = PROMPT_CACHE, key = "#id")
-    public void deletePrompt(Long id) {
-
-        Prompt prompt = promptRepository.findById(id)
-                .orElseThrow(() ->
-                        new PromptNotFoundException(
-                                "Prompt not found with id : " + id
-                        )
-                );
+    public void deletePrompt(UUID id) {
+        Prompt prompt = findPromptById(id);
 
         if (prompt.getAttachmentPublicId() != null
                 && !prompt.getAttachmentPublicId().isBlank()) {
@@ -136,9 +117,14 @@ public class PromptServiceImpl implements PromptService {
     }
 
     @Override
+    public boolean promptExists(UUID id) {
+        return promptRepository.existsById(id);
+    }
+
+    @Override
     @CachePut(value = PROMPT_CACHE, key = "#promptId")
     public PromptResponse uploadAttachment(
-            Long promptId,
+            UUID promptId,
             MultipartFile file) {
 
         Prompt prompt = findPromptById(promptId);
@@ -170,8 +156,7 @@ public class PromptServiceImpl implements PromptService {
 
     @Override
     @CachePut(value = PROMPT_CACHE, key = "#promptId")
-    public PromptResponse deleteAttachment(Long promptId) {
-
+    public PromptResponse deleteAttachment(UUID promptId) {
         Prompt prompt = findPromptById(promptId);
 
         if (prompt.getAttachmentPublicId() == null
@@ -198,7 +183,6 @@ public class PromptServiceImpl implements PromptService {
 
     @Override
     public List<PromptResponse> searchByTitle(String title) {
-
         return sortPromptsNewestFirst(
                 promptRepository
                         .findByTitleContainingIgnoreCase(title)
@@ -287,8 +271,7 @@ public class PromptServiceImpl implements PromptService {
         }
     }
 
-    private Prompt findPromptById(Long id) {
-
+    private Prompt findPromptById(UUID id) {
         return promptRepository.findById(id)
                 .orElseThrow(() ->
                         new PromptNotFoundException(
@@ -328,7 +311,6 @@ public class PromptServiceImpl implements PromptService {
         }
 
         if (firstCreatedAt != null) {
-
             int createdAtComparison =
                     secondCreatedAt.compareTo(
                             firstCreatedAt
@@ -339,8 +321,8 @@ public class PromptServiceImpl implements PromptService {
             }
         }
 
-        Long firstId = first.getId();
-        Long secondId = second.getId();
+        UUID firstId = first.getId();
+        UUID secondId = second.getId();
 
         if (firstId == null && secondId != null) {
             return 1;

@@ -32,7 +32,7 @@ public class PromptServiceClient {
         this.httpServletRequest = httpServletRequest;
     }
 
-    public PromptResponse getPromptById(Long promptId) {
+    public PromptResponse getPromptById(String promptId) {
 
         String url =
                 promptServiceUrl + "/api/prompts/" + promptId;

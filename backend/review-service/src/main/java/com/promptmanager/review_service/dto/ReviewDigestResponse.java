@@ -6,7 +6,7 @@ public class ReviewDigestResponse {
 
     private long totalReviews;
     private double averageScore;
-    private Long highestScoringPromptId;
+    private String highestScoringPromptId;
     private LocalDateTime generatedAt;
 
     public ReviewDigestResponse() {
@@ -15,7 +15,7 @@ public class ReviewDigestResponse {
     public ReviewDigestResponse(
             long totalReviews,
             double averageScore,
-            Long highestScoringPromptId,
+            String highestScoringPromptId,
             LocalDateTime generatedAt) {
 
         this.totalReviews = totalReviews;
@@ -40,12 +40,12 @@ public class ReviewDigestResponse {
         this.averageScore = averageScore;
     }
 
-    public Long getHighestScoringPromptId() {
+    public String getHighestScoringPromptId() {
         return highestScoringPromptId;
     }
 
     public void setHighestScoringPromptId(
-            Long highestScoringPromptId) {
+            String highestScoringPromptId) {
 
         this.highestScoringPromptId =
                 highestScoringPromptId;

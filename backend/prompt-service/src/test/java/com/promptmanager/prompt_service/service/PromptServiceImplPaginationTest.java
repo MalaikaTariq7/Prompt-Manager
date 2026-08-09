@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +38,8 @@ class PromptServiceImplPaginationTest {
 
     @Test
     void getsDefaultPaginatedPrompts() {
-        Prompt prompt = prompt(1L, "writing");
+        UUID id = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        Prompt prompt = prompt(id, "writing");
         when(promptRepository.findAll(org.mockito.ArgumentMatchers.<Pageable>any()))
                 .thenReturn(new PageImpl<>(List.of(prompt)));
 
@@ -51,7 +53,7 @@ class PromptServiceImplPaginationTest {
 
         assertThat(response.getContent())
                 .extracting(PromptResponse::getId)
-                .containsExactly(1L);
+                .containsExactly(id);
         verify(promptRepository)
                 .findAll(org.mockito.ArgumentMatchers.<Pageable>argThat(pageable ->
                         pageable.getPageNumber() == 0
@@ -63,7 +65,7 @@ class PromptServiceImplPaginationTest {
 
     @Test
     void filtersByTagUsingCategoryField() {
-        Prompt prompt = prompt(2L, "coding");
+        Prompt prompt = prompt(UUID.fromString("00000000-0000-0000-0000-000000000002"), "coding");
         when(promptRepository.findByCategoryIgnoreCase(
                 eq("coding"),
                 org.mockito.ArgumentMatchers.any(Pageable.class)
@@ -142,7 +144,16 @@ class PromptServiceImplPaginationTest {
                 .hasMessageContaining("sortBy must be one of");
     }
 
-    private Prompt prompt(Long id, String category) {
+    @Test
+    void checksPromptExistenceByUuid() {
+        UUID id = UUID.fromString("00000000-0000-0000-0000-000000000003");
+        when(promptRepository.existsById(id)).thenReturn(true);
+
+        assertThat(promptService.promptExists(id)).isTrue();
+        verify(promptRepository).existsById(id);
+    }
+
+    private Prompt prompt(UUID id, String category) {
         return new Prompt(
                 id,
                 "Title " + id,

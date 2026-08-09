@@ -18,6 +18,15 @@ import com.promptmanager.review_service.entity.Review;
 
 class JsonReviewRepositoryPaginationTest {
 
+    private static final String PROMPT_10_ID =
+            "00000000-0000-0000-0000-000000000010";
+    private static final String PROMPT_20_ID =
+            "00000000-0000-0000-0000-000000000020";
+    private static final String PROMPT_30_ID =
+            "00000000-0000-0000-0000-000000000030";
+    private static final String MISSING_PROMPT_ID =
+            "00000000-0000-0000-0000-000000000999";
+
     @TempDir
     Path tempDir;
 
@@ -89,12 +98,12 @@ class JsonReviewRepositoryPaginationTest {
                         10,
                         Sort.by(Sort.Direction.ASC, "id")
                 ),
-                20L
+                PROMPT_20_ID
         );
 
         assertThat(page.getContent())
                 .extracting(Review::getPromptId)
-                .containsOnly(20L);
+                .containsOnly(PROMPT_20_ID);
         assertThat(page.getContent())
                 .extracting(Review::getId)
                 .containsExactly(2L, 3L, 6L);
@@ -157,7 +166,7 @@ class JsonReviewRepositoryPaginationTest {
                         10,
                         Sort.by(Sort.Direction.DESC, "createdAt")
                 ),
-                999L
+                MISSING_PROMPT_ID
         );
 
         assertThat(page.getContent()).isEmpty();
@@ -167,17 +176,17 @@ class JsonReviewRepositoryPaginationTest {
     }
 
     private void seedReviews() {
-        repository.save(review(1L, 10L, "Ava", 1, 1));
-        repository.save(review(2L, 20L, "Ben", 2, 2));
-        repository.save(review(3L, 20L, "Cara", 3, 3));
-        repository.save(review(4L, 30L, "Drew", 4, 4));
-        repository.save(review(5L, 30L, "Eli", 5, 5));
-        repository.save(review(6L, 20L, "Malaika", 3, 6));
+        repository.save(review(1L, PROMPT_10_ID, "Ava", 1, 1));
+        repository.save(review(2L, PROMPT_20_ID, "Ben", 2, 2));
+        repository.save(review(3L, PROMPT_20_ID, "Cara", 3, 3));
+        repository.save(review(4L, PROMPT_30_ID, "Drew", 4, 4));
+        repository.save(review(5L, PROMPT_30_ID, "Eli", 5, 5));
+        repository.save(review(6L, PROMPT_20_ID, "Malaika", 3, 6));
     }
 
     private Review review(
             Long id,
-            Long promptId,
+            String promptId,
             String reviewerName,
             Integer rating,
             int createdAtDay) {

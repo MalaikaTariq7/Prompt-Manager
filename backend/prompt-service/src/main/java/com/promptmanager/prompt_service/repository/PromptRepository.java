@@ -1,6 +1,7 @@
 package com.promptmanager.prompt_service.repository;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import com.promptmanager.prompt_service.entity.Prompt;
 
 @Repository
-public interface PromptRepository extends JpaRepository<Prompt, Long> {
+public interface PromptRepository extends JpaRepository<Prompt, UUID> {
 
     List<Prompt> findByTitleContainingIgnoreCase(String title);
 

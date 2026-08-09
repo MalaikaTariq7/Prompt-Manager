@@ -231,10 +231,7 @@ class DataCollector:
             expected_columns,
         )
 
-        dataframe["id"] = pd.to_numeric(
-            dataframe["id"],
-            errors="coerce",
-        ).astype("Int64")
+        dataframe["id"] = dataframe["id"].astype("string")
 
         dataframe["createdAt"] = pd.to_datetime(
             dataframe["createdAt"],
@@ -281,10 +278,7 @@ class DataCollector:
             errors="coerce",
         ).astype("Int64")
 
-        dataframe["promptId"] = pd.to_numeric(
-            dataframe["promptId"],
-            errors="coerce",
-        ).astype("Int64")
+        dataframe["promptId"] = dataframe["promptId"].astype("string")
 
         dataframe["rating"] = pd.to_numeric(
             dataframe["rating"],
@@ -333,7 +327,7 @@ class DataCollector:
     def _empty_prompts_dataframe() -> pd.DataFrame:
         return pd.DataFrame(
             {
-                "id": pd.Series(dtype="Int64"),
+                "id": pd.Series(dtype="string"),
                 "title": pd.Series(dtype="string"),
                 "description": pd.Series(dtype="string"),
                 "promptText": pd.Series(dtype="string"),
@@ -350,7 +344,7 @@ class DataCollector:
         return pd.DataFrame(
             {
                 "id": pd.Series(dtype="Int64"),
-                "promptId": pd.Series(dtype="Int64"),
+                "promptId": pd.Series(dtype="string"),
                 "reviewerName": pd.Series(dtype="string"),
                 "rating": pd.Series(dtype="Float64"),
                 "comment": pd.Series(dtype="string"),

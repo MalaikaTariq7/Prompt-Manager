@@ -61,17 +61,17 @@ $prompt2 = curl.exe -s -X POST "http://localhost:8081/api/prompts" `
 curl.exe -s -X POST "http://localhost:8082/api/reviews" `
   -H "Authorization: Bearer $token" `
   -H "Content-Type: application/json" `
-  -d "{`"promptId`":$($prompt1.id),`"reviewerName`":`"Malaika`",`"rating`":5,`"comment`":`"Strong business prompt`"}"
+  -d "{`"promptId`":`"$($prompt1.id)`",`"reviewerName`":`"Malaika`",`"rating`":5,`"comment`":`"Strong business prompt`"}"
 
 curl.exe -s -X POST "http://localhost:8082/api/reviews" `
   -H "Authorization: Bearer $token" `
   -H "Content-Type: application/json" `
-  -d "{`"promptId`":$($prompt1.id),`"reviewerName`":`"Ali`",`"rating`":4,`"comment`":`"Useful and clear`"}"
+  -d "{`"promptId`":`"$($prompt1.id)`",`"reviewerName`":`"Ali`",`"rating`":4,`"comment`":`"Useful and clear`"}"
 
 curl.exe -s -X POST "http://localhost:8082/api/reviews" `
   -H "Authorization: Bearer $token" `
   -H "Content-Type: application/json" `
-  -d "{`"promptId`":$($prompt2.id),`"reviewerName`":`"Sara`",`"rating`":3,`"comment`":`"Needs more detail`"}"
+  -d "{`"promptId`":`"$($prompt2.id)`",`"reviewerName`":`"Sara`",`"rating`":3,`"comment`":`"Needs more detail`"}"
 ```
 
 Wait for the scheduled refresh interval, or restart analytics-service to trigger a refresh immediately.

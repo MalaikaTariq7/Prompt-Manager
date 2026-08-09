@@ -1,6 +1,7 @@
 package com.promptmanager.prompt_service.entity;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,8 +16,9 @@ import jakarta.persistence.Table;
 public class Prompt {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(nullable = false, updatable = false)
+    private UUID id;
 
     @Column(nullable = false)
     private String title;
@@ -37,12 +39,10 @@ public class Prompt {
 
     private String attachmentPublicId;
 
-    // Default Constructor
     public Prompt() {
     }
 
-    // Parameterized Constructor
-    public Prompt(Long id, String title, String description, String promptText,
+    public Prompt(UUID id, String title, String description, String promptText,
                   String category, LocalDateTime createdAt) {
         this.id = id;
         this.title = title;
@@ -52,7 +52,7 @@ public class Prompt {
         this.createdAt = createdAt;
     }
 
-    public Prompt(Long id, String title, String description, String promptText,
+    public Prompt(UUID id, String title, String description, String promptText,
                   String category, LocalDateTime createdAt,
                   String attachmentUrl, String attachmentPublicId) {
         this(id, title, description, promptText, category, createdAt);
@@ -60,19 +60,18 @@ public class Prompt {
         this.attachmentPublicId = attachmentPublicId;
     }
 
-    // Automatically sets createdAt before saving to database
     @PrePersist
     public void prePersist() {
-        this.createdAt = LocalDateTime.now();
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
     }
 
-    // Getters and Setters
-
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -112,8 +111,6 @@ public class Prompt {
         return createdAt;
     }
 
-    // Setter is optional because @PrePersist sets it automatically,
-    // but we keep it for flexibility.
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }

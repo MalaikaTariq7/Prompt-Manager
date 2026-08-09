@@ -1,6 +1,7 @@
 package com.promptmanager.prompt_service.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,15 +15,17 @@ public interface PromptService {
 
     List<PromptResponse> getAllPrompts();
 
-    PromptResponse getPromptById(Long id);
+    PromptResponse getPromptById(UUID id);
 
-    PromptResponse updatePrompt(Long id, PromptRequest request);
+    PromptResponse updatePrompt(UUID id, PromptRequest request);
 
-    void deletePrompt(Long id);
+    void deletePrompt(UUID id);
 
-    PromptResponse uploadAttachment(Long promptId, MultipartFile file);
+    boolean promptExists(UUID id);
 
-    PromptResponse deleteAttachment(Long promptId);
+    PromptResponse uploadAttachment(UUID promptId, MultipartFile file);
+
+    PromptResponse deleteAttachment(UUID promptId);
 
     List<PromptResponse> searchByTitle(String title);
 

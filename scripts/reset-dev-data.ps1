@@ -12,6 +12,6 @@ Set-Content -Path $reviewPath -Value "[]"
 if (Get-Command psql -ErrorAction SilentlyContinue) {
     psql -U $Username -d $Database -f (Join-Path $PSScriptRoot "reset-dev-data.sql")
 } else {
-    Write-Host "psql was not found. Reviews were cleared, but prompts still need to be cleared from PostgreSQL."
-    Write-Host "Run scripts/reset-dev-data.sql against the prompt_manager database."
+    Write-Host "psql was not found. Reviews were cleared, but the PostgreSQL prompts table was not recreated."
+    Write-Host "Run scripts/reset-dev-data.sql against the prompt_manager database before starting prompt-service."
 }

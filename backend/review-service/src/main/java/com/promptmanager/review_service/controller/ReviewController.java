@@ -75,7 +75,7 @@ public class ReviewController {
 
                     @Parameter(description = "Optional prompt id filter")
                     @RequestParam(required = false)
-                    Long promptId) {
+                    String promptId) {
 
         return ResponseEntity.ok(
                 reviewService.getReviews(
@@ -137,7 +137,7 @@ public class ReviewController {
     @GetMapping("/prompt/{promptId}")
     public ResponseEntity<List<ReviewResponse>>
             getReviewsByPromptId(
-                    @PathVariable Long promptId) {
+                    @PathVariable String promptId) {
 
         return ResponseEntity.ok(
                 reviewService

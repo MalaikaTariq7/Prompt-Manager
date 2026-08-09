@@ -19,7 +19,7 @@ public interface ReviewService {
             int size,
             String sortBy,
             String direction,
-            Long promptId);
+            String promptId);
 
     ReviewResponse getReviewById(Long id);
 
@@ -30,7 +30,7 @@ public interface ReviewService {
     void deleteReview(Long id);
 
     List<ReviewResponse> getReviewsByPromptId(
-            Long promptId);
+            String promptId);
 
     List<ReviewResponse> getReviewsByRating(
             Integer rating);

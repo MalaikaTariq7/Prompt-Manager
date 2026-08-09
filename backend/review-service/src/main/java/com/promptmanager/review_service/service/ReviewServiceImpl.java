@@ -86,7 +86,7 @@ public class ReviewServiceImpl implements ReviewService {
             int size,
             String sortBy,
             String direction,
-            Long promptId) {
+            String promptId) {
 
         validatePaginationParameters(
                 page,
@@ -179,7 +179,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public List<ReviewResponse>
-            getReviewsByPromptId(Long promptId) {
+            getReviewsByPromptId(String promptId) {
 
         return sortReviewsNewestFirst(
                 repository.findByPromptId(promptId)

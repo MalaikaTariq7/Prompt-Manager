@@ -1,6 +1,8 @@
 package com.promptmanager.prompt_service.controller;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -60,16 +62,27 @@ public class PromptController {
                 tag);
     }
 
+    @Operation(summary = "Check whether a prompt exists")
+    @GetMapping("/exit")
+    public Map<String, Object> promptExists(
+            @RequestParam UUID id) {
+
+        return Map.of(
+                "id", id,
+                "exists", promptService.promptExists(id)
+        );
+    }
+
     @GetMapping("/{id}")
     public PromptResponse getPromptById(
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
 
         return promptService.getPromptById(id);
     }
 
     @PutMapping("/{id}")
     public PromptResponse updatePrompt(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody PromptRequest request) {
 
         return promptService.updatePrompt(id, request);
@@ -77,7 +90,7 @@ public class PromptController {
 
     @DeleteMapping("/{id}")
     public void deletePrompt(
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
 
         promptService.deletePrompt(id);
     }
@@ -88,7 +101,7 @@ public class PromptController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public PromptResponse uploadAttachment(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Parameter(
                     description = "Attachment file",
                     required = true,
@@ -101,7 +114,7 @@ public class PromptController {
     @Operation(summary = "Delete the attachment from a prompt")
     @DeleteMapping("/{id}/attachment")
     public PromptResponse deleteAttachment(
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
 
         return promptService.deleteAttachment(id);
     }

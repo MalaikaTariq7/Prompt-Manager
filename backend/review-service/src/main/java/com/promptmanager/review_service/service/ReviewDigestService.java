@@ -52,7 +52,7 @@ public class ReviewDigestService {
                 .average()
                 .orElse(0.0);
 
-        Long highestScoringPromptId =
+        String highestScoringPromptId =
                 calculateHighestScoringPrompt(reviews);
 
         ReviewDigestResponse digest =
@@ -88,10 +88,10 @@ public class ReviewDigestService {
         return digest;
     }
 
-    private Long calculateHighestScoringPrompt(
+    private String calculateHighestScoringPrompt(
             List<Review> reviews) {
 
-        Map<Long, Double> averageScoresByPrompt =
+        Map<String, Double> averageScoresByPrompt =
                 reviews.stream()
                         .filter(review ->
                                 review.getPromptId() != null
@@ -110,7 +110,7 @@ public class ReviewDigestService {
                 .stream()
                 .max(
                         Comparator
-                                .<Map.Entry<Long, Double>>
+                                .<Map.Entry<String, Double>>
                                         comparingDouble(
                                                 Map.Entry::getValue
                                         )

@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public class PromptResponse {
 
-    private Long id;
+    private String id;
 
     private String title;
 
@@ -19,7 +19,7 @@ public class PromptResponse {
     public PromptResponse() {
     }
 
-    public PromptResponse(Long id,
+    public PromptResponse(String id,
                           String title,
                           String description,
                           String promptText,
@@ -33,7 +33,7 @@ public class PromptResponse {
         this.createdAt = createdAt;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
@@ -57,7 +57,7 @@ public class PromptResponse {
         return createdAt;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
