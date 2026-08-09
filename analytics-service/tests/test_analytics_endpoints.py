@@ -213,7 +213,11 @@ async def test_analytics_endpoints_require_jwt(client) -> None:
     response = await client.get("/api/analytics/overview")
 
     assert response.status_code == 401
-    assert response.json()["detail"]["message"] == "A valid JWT token is required"
+    assert response.json() == {
+        "status": 401,
+        "error": "Unauthorized",
+        "message": "A valid JWT token is required",
+    }
 
 
 @pytest.mark.asyncio

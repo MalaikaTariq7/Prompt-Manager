@@ -70,7 +70,11 @@ async def test_protected_endpoint_rejects_missing_jwt_token(
     response = await client.get("/api/analytics/test")
 
     assert response.status_code == 401
-    assert response.json()["detail"]["message"] == "A valid JWT token is required"
+    assert response.json() == {
+        "status": 401,
+        "error": "Unauthorized",
+        "message": "A valid JWT token is required",
+    }
 
 
 @pytest.mark.asyncio
@@ -83,7 +87,11 @@ async def test_protected_endpoint_rejects_invalid_jwt_token(
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"]["message"] == "JWT token is invalid"
+    assert response.json() == {
+        "status": 401,
+        "error": "Unauthorized",
+        "message": "JWT token is invalid",
+    }
 
 
 @pytest.mark.asyncio
@@ -98,4 +106,8 @@ async def test_protected_endpoint_rejects_expired_jwt_token(
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"]["message"] == "JWT token has expired"
+    assert response.json() == {
+        "status": 401,
+        "error": "Unauthorized",
+        "message": "JWT token has expired",
+    }

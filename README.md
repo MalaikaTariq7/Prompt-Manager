@@ -1,6 +1,6 @@
 # Prompt Manager System
 
-Prompt Manager System is a Spring Boot microservices project for creating AI prompts and collecting reviews for them. Week 2 extends the Week 1 CRUD system with JWT authentication, Cloudinary file attachments, caching, scheduled review digests, asynchronous notification logging, and paginated list endpoints.
+Prompt Manager System is a Spring Boot and FastAPI microservices project for creating AI prompts, collecting reviews, and reporting analytics. Week 3 adds a Python analytics-service that reads prompt-service and review-service over HTTP, verifies the shared JWT scheme, refreshes pandas snapshots on a schedule, and exposes decision-oriented analytics endpoints.
 
 ## Project Structure
 
@@ -18,7 +18,7 @@ PromptManagerSystem/
 +-- docker-compose.yml     # Optional Docker setup
 ```
 
-## Week 2 Features
+## Week 2 and Week 3 Features
 
 - JWT login is provided by `prompt-service` at `POST /api/auth/login`.
 - Both `prompt-service` and `review-service` validate `Authorization: Bearer <token>`.
@@ -29,6 +29,7 @@ PromptManagerSystem/
 - Review listing uses `Page`, `Pageable`, and `PageImpl` with metadata.
 - `analytics-service` provides JWT-protected overview, trend, tag, leaderboard, and correlation endpoints.
 - `analytics-service` logs in to `prompt-service`, stores its service JWT in memory, and re-authenticates automatically after downstream `401` responses.
+- Known shortcut: the local analytics service can reuse the Week 2 username/password as service credentials. In a production system, a background service should use a separate service account with its own permissions instead of sharing a human login.
 
 ## Architecture
 
@@ -417,7 +418,7 @@ curl.exe -X GET "http://localhost:8002/api/analytics/correlation" `
 
 Error handling notes:
 
-- Missing, invalid, and expired JWTs return `401` with a clear message.
+- Missing, invalid, and expired JWTs return `401` with the same top-level `status`, `error`, and `message` shape used by the Java services.
 - Invalid query parameters return a structured `422` response.
 - If prompt-service or review-service is offline during refresh, analytics-service keeps the previous snapshot and records `lastRefreshError` instead of crashing.
 
@@ -465,10 +466,11 @@ review-service: 10 tests, passing
 analytics-service: 21 tests, passing
 ```
 
-## Current Week 2 Notes
+## Current Week 2 and Week 3 Notes
 
 - `GET /api/prompts` is Week 2 compliant: `page`, `size`, `sortBy`, `direction`, and `tag`.
 - `GET /api/reviews` is Week 2 compliant: `page`, `size`, `sortBy`, `direction`, and `promptId`.
 - Prompt `tag` filtering maps to the existing `category` field.
 - Dummy fallback values in `application.properties` allow local startup, but real Cloudinary uploads require real Cloudinary environment variables.
+- `analytics-service` never reads another service database or runtime file directly; prompts and reviews are collected through HTTP APIs only.
 - Do not commit generated runtime files such as `reviews.json` or `notifications.log`.

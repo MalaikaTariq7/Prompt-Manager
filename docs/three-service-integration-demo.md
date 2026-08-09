@@ -40,7 +40,43 @@ $response = curl.exe -s -X POST "http://localhost:8081/api/auth/login" `
 $token = ($response | ConvertFrom-Json).token
 ```
 
-## 5. Verify all three services through authenticated calls
+
+## 5. Create demo prompts across tags
+
+```powershell
+$prompt1 = curl.exe -s -X POST "http://localhost:8081/api/prompts" `
+  -H "Authorization: Bearer $token" `
+  -H "Content-Type: application/json" `
+  -d '{"title":"Week 3 Business Prompt","description":"Drafts a business update","promptText":"Write a concise business update for stakeholders.","category":"Business"}' | ConvertFrom-Json
+
+$prompt2 = curl.exe -s -X POST "http://localhost:8081/api/prompts" `
+  -H "Authorization: Bearer $token" `
+  -H "Content-Type: application/json" `
+  -d '{"title":"Week 3 Education Prompt","description":"Creates a lesson plan","promptText":"Create a lesson plan with objectives and checks for understanding.","category":"Education"}' | ConvertFrom-Json
+```
+
+## 6. Create demo reviews
+
+```powershell
+curl.exe -s -X POST "http://localhost:8082/api/reviews" `
+  -H "Authorization: Bearer $token" `
+  -H "Content-Type: application/json" `
+  -d "{`"promptId`":$($prompt1.id),`"reviewerName`":`"Malaika`",`"rating`":5,`"comment`":`"Strong business prompt`"}"
+
+curl.exe -s -X POST "http://localhost:8082/api/reviews" `
+  -H "Authorization: Bearer $token" `
+  -H "Content-Type: application/json" `
+  -d "{`"promptId`":$($prompt1.id),`"reviewerName`":`"Ali`",`"rating`":4,`"comment`":`"Useful and clear`"}"
+
+curl.exe -s -X POST "http://localhost:8082/api/reviews" `
+  -H "Authorization: Bearer $token" `
+  -H "Content-Type: application/json" `
+  -d "{`"promptId`":$($prompt2.id),`"reviewerName`":`"Sara`",`"rating`":3,`"comment`":`"Needs more detail`"}"
+```
+
+Wait for the scheduled refresh interval, or restart analytics-service to trigger a refresh immediately.
+
+## 7. Verify all three services through authenticated calls
 
 ```powershell
 curl.exe -s "http://localhost:8081/api/prompts?page=0&size=5" `
@@ -53,7 +89,7 @@ curl.exe -s "http://localhost:8002/api/analytics/overview" `
   -H "Authorization: Bearer $token"
 ```
 
-## 6. Verify the five analytics endpoints
+## 8. Verify the five analytics endpoints
 
 ```powershell
 curl.exe -s "http://localhost:8002/api/analytics/overview" -H "Authorization: Bearer $token"
