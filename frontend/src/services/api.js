@@ -6,6 +6,8 @@ const apiHeaders = {
   'ngrok-skip-browser-warning': 'true'
 }
 
+const encodeId = (id) => encodeURIComponent(String(id))
+
 export const getAuthToken = () => localStorage.getItem(TOKEN_KEY)
 
 export const setAuthToken = (token) => {
@@ -47,16 +49,17 @@ export const authAPI = {
 export const promptAPI = {
   createPrompt: (data) => promptApi.post('/api/prompts', data),
   getAllPrompts: (params = {}) => promptApi.get('/api/prompts', { params }),
-  getPromptById: (id) => promptApi.get(`/api/prompts/${id}`),
-  updatePrompt: (id, data) => promptApi.put(`/api/prompts/${id}`, data),
-  deletePrompt: (id) => promptApi.delete(`/api/prompts/${id}`),
+  getPromptById: (id) => promptApi.get(`/api/prompts/${encodeId(id)}`),
+  promptExists: (id) => promptApi.get('/api/prompts/exit', { params: { id } }),
+  updatePrompt: (id, data) => promptApi.put(`/api/prompts/${encodeId(id)}`, data),
+  deletePrompt: (id) => promptApi.delete(`/api/prompts/${encodeId(id)}`),
 }
 
 export const reviewAPI = {
   createReview: (data) => reviewApi.post('/api/reviews', data),
   getAllReviews: (params = {}) => reviewApi.get('/api/reviews', { params }),
-  getReviewById: (id) => reviewApi.get(`/api/reviews/${id}`),
-  getReviewsByPromptId: (promptId) => reviewApi.get(`/api/reviews/prompt/${promptId}`),
-  updateReview: (id, data) => reviewApi.put(`/api/reviews/${id}`, data),
-  deleteReview: (id) => reviewApi.delete(`/api/reviews/${id}`),
+  getReviewById: (id) => reviewApi.get(`/api/reviews/${encodeId(id)}`),
+  getReviewsByPromptId: (promptId) => reviewApi.get(`/api/reviews/prompt/${encodeId(promptId)}`),
+  updateReview: (id, data) => reviewApi.put(`/api/reviews/${encodeId(id)}`, data),
+  deleteReview: (id) => reviewApi.delete(`/api/reviews/${encodeId(id)}`),
 }
