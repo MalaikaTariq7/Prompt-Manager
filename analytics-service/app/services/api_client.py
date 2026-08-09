@@ -74,15 +74,16 @@ class ApiClient:
             return response.json()
 
         except httpx.HTTPStatusError as exception:
-            logger.error(
-                "Request failed for %s with status %s",
+            status_code = exception.response.status_code
+            logger.warning(
+                "Request failed for %s with status %s.",
                 url,
-                exception.response.status_code,
+                status_code,
             )
             raise
 
         except httpx.RequestError as exception:
-            logger.error(
+            logger.warning(
                 "Service request failed for %s: %s",
                 url,
                 exception,

@@ -7,6 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -19,7 +20,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
-                request.getDescription(false).replace("uri=", "")
+                getPath(request)
         );
 
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
@@ -30,13 +31,15 @@ public class GlobalExceptionHandler {
             PromptServiceException ex,
             WebRequest request) {
 
+        HttpStatus status = ex.getStatus();
+
         ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
+                status.value(),
                 ex.getMessage(),
-                request.getDescription(false).replace("uri=", "")
+                getPath(request)
         );
 
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(error, status);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -48,12 +51,26 @@ public class GlobalExceptionHandler {
 
         String message = fieldError != null
                 ? fieldError.getDefaultMessage()
-                : "Validation Failed";
+                : "Validation failed";
 
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 message,
-                request.getDescription(false).replace("uri=", "")
+                getPath(request)
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex,
+            WebRequest request) {
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getName() + " has an invalid value.",
+                getPath(request)
         );
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
@@ -67,7 +84,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 ex.getMessage(),
-                request.getDescription(false).replace("uri=", "")
+                getPath(request)
         );
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
@@ -80,10 +97,14 @@ public class GlobalExceptionHandler {
 
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                ex.getMessage(),
-                request.getDescription(false).replace("uri=", "")
+                "An internal error occurred.",
+                getPath(request)
         );
 
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private String getPath(WebRequest request) {
+        return request.getDescription(false).replace("uri=", "");
     }
 }

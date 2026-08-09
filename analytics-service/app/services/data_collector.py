@@ -95,8 +95,33 @@ class DataCollector:
 
                 return True
 
+            except httpx.HTTPStatusError as exception:
+                service_name = self._service_name_from_url(
+                    self._request_url_from_exception(exception)
+                )
+                status_code = exception.response.status_code
+                self.last_refresh_error = (
+                    f"{service_name} returned HTTP {status_code}"
+                )
+
+                logger.warning(
+                    "Analytics refresh skipped because %s returned "
+                    "HTTP %s. Keeping the last successful snapshot.",
+                    service_name,
+                    status_code,
+                )
+
+                return False
+
             except httpx.RequestError as exception:
-                self.last_refresh_error = str(exception)
+                request_url = self._request_url_from_exception(exception)
+                service_name = self._service_name_from_url(request_url)
+
+                self.last_refresh_error = (
+                    str(exception)
+                    if not request_url
+                    else f"{service_name} is unavailable"
+                )
 
                 logger.warning(
                     "Analytics dependencies are unavailable: %s. "
@@ -107,10 +132,12 @@ class DataCollector:
                 return False
 
             except Exception as exception:
-                self.last_refresh_error = str(exception)
+                self.last_refresh_error = (
+                    "Unexpected analytics refresh error"
+                )
 
                 logger.exception(
-                    "Analytics refresh failed. "
+                    "Analytics refresh failed unexpectedly. "
                     "Keeping the last successful snapshot."
                 )
 
@@ -322,6 +349,24 @@ class DataCollector:
         ]
 
         return dataframe[expected_columns + extra_columns]
+
+    def _service_name_from_url(self, url: str) -> str:
+        if self.settings.prompt_service_url in url:
+            return "prompt-service"
+
+        if self.settings.review_service_url in url:
+            return "review-service"
+
+        return "upstream service"
+
+    @staticmethod
+    def _request_url_from_exception(
+        exception: httpx.RequestError,
+    ) -> str:
+        try:
+            return str(exception.request.url)
+        except RuntimeError:
+            return ""
 
     @staticmethod
     def _empty_prompts_dataframe() -> pd.DataFrame:

@@ -7,6 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -20,7 +21,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.NOT_FOUND.value(),
                 HttpStatus.NOT_FOUND.getReasonPhrase(),
                 ex.getMessage(),
-                request.getDescription(false).replace("uri=", "")
+                getPath(request)
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
@@ -40,7 +41,22 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 message,
-                request.getDescription(false).replace("uri=", "")
+                getPath(request)
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex,
+            WebRequest request) {
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                ex.getName() + " has an invalid value.",
+                getPath(request)
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
@@ -55,7 +71,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 ex.getMessage(),
-                request.getDescription(false).replace("uri=", "")
+                getPath(request)
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
@@ -70,7 +86,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_GATEWAY.value(),
                 HttpStatus.BAD_GATEWAY.getReasonPhrase(),
                 ex.getMessage(),
-                request.getDescription(false).replace("uri=", "")
+                getPath(request)
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_GATEWAY);
@@ -84,11 +100,15 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "An internal error occurred: " + ex.getMessage(),
-                request.getDescription(false).replace("uri=", "")
+                "An internal error occurred.",
+                getPath(request)
         );
 
         return new ResponseEntity<>(errorResponse,
                 HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private String getPath(WebRequest request) {
+        return request.getDescription(false).replace("uri=", "");
     }
 }
