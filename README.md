@@ -443,7 +443,19 @@ Supporting submission docs:
 ./scripts/reset-dev-data.ps1
 ```
 
-This clears `backend/review-service/reviews.json` and recreates the local PostgreSQL `prompts` table with a UUID primary key. Run it after pulling the UUID prompt ID change if your existing dev database still has the old numeric `prompts.id` column.
+If your existing dev database still has the old numeric `prompts.id` column, either migrate it while preserving demo data:
+
+```powershell
+./scripts/migrate-dev-data-to-uuid.ps1
+```
+
+or clear everything and recreate the prompt table:
+
+```powershell
+./scripts/reset-dev-data.ps1
+```
+
+The reset script clears `backend/review-service/reviews.json` and recreates the local PostgreSQL `prompts` table with a UUID primary key.
 
 ## Tests
 
